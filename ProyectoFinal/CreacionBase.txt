@@ -1,9 +1,7 @@
 USE [master]
 GO
 
-
-
-
+/* Prueba */
 
 /****** Object:  Database [ProjectoFinal]    Script Date: 25/3/2023 11:27:20 ******/
 CREATE DATABASE [ProjectoFinal]
