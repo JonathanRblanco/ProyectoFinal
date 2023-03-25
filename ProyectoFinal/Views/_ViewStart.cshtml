@@ -1,0 +1,9 @@
+﻿@{
+    if (Context.Request.Path == "/Account/Login" || Context.Request.Path == "/Account/Register") {
+        ViewBag.title = "Projecto Final";
+        Layout = "_LayoutLogin";
+    }
+    else {
+        Layout = "_Layout";
+    }
+}
