@@ -23,6 +23,7 @@ try
         opciones.Filters.Add(new AuthorizeFilter(politicaUsuariosAutenticados));
     });
     var services = builder.Services;
+    ////
     /*El patrón de inyección de dependencias es un patrón de diseño de software
      * que se utiliza para lograr una separación más clara entre los componentes
      * de una aplicación y para facilitar el mantenimiento y la prueba de la aplicación.
