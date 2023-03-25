@@ -1,6 +1,11 @@
 USE [master]
 GO
 
+<<<<<<< HEAD
+=======
+/* Prueba */
+
+>>>>>>> 998c4ad6a1665c9151b9c4b189859c937cd6dca2
 /****** Object:  Database [ProjectoFinal]    Script Date: 25/3/2023 11:27:20 ******/
 CREATE DATABASE [ProjectoFinal]
  CONTAINMENT = NONE
