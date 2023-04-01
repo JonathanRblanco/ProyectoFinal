@@ -1,11 +1,12 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Identity;
 using ProyectoFinal.Contracts;
+using ProyectoFinal.Models;
 
-namespace ProyectoFinal.Repositorys
+namespace ProyectoFinal.Stores
 {
     //TODO : IMPLEMENTAR LOS METODOS DEL STORE USANDO LOS REPOSITORIOS DE IUNITOFWORK
-    public class UserStore : IUserStore<IdentityUser>, IUserPasswordStore<IdentityUser>, IUserEmailStore<IdentityUser>, IUserRoleStore<IdentityUser>
+    public class UserStore : IUserStore<User>, IUserPasswordStore<User>, IUserEmailStore<User>, IUserRoleStore<User>, IUserLockoutStore<User>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -14,7 +15,7 @@ namespace ProyectoFinal.Repositorys
             _unitOfWork = unitOfWork;
         }
 
-        public async Task AddToRoleAsync(IdentityUser user, string roleName, CancellationToken cancellationToken)
+        public async Task AddToRoleAsync(User user, string roleName, CancellationToken cancellationToken)
         {
             try
             {
@@ -36,7 +37,7 @@ namespace ProyectoFinal.Repositorys
             }
         }
 
-        public async Task<IdentityResult> CreateAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<IdentityResult> CreateAsync(User user, CancellationToken cancellationToken)
         {
             try
             {
@@ -58,7 +59,7 @@ namespace ProyectoFinal.Repositorys
             }
         }
 
-        public async Task<IdentityResult> DeleteAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
         {
             try
             {
@@ -81,19 +82,19 @@ namespace ProyectoFinal.Repositorys
             }
         }
 
-        public async Task<IdentityUser?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
+        public async Task<User?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
         {
             // Buscar al usuario por su email normalizado utilizando Dapper y la instancia de IUnitOfWork
-            return await _unitOfWork.Connection.QueryFirstOrDefaultAsync<IdentityUser>(
+            return await _unitOfWork.Connection.QueryFirstOrDefaultAsync<User>(
                 "SELECT * FROM Users WHERE NormalizedEmail = @NormalizedEmail",
                 new { NormalizedEmail = normalizedEmail },
                 _unitOfWork.Transaction);
         }
 
-        public async Task<IdentityUser?> FindByIdAsync(string userId, CancellationToken cancellationToken)
+        public async Task<User?> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
             // Obtener el usuario de la base de datos utilizando Dapper y la instancia de IUnitOfWork
-            var result = await _unitOfWork.Connection.QuerySingleOrDefaultAsync<IdentityUser>(
+            var result = await _unitOfWork.Connection.QuerySingleOrDefaultAsync<User>(
                 "SELECT * FROM Users WHERE Id = @Id",
                 new { Id = userId },
                 _unitOfWork.Transaction);
@@ -101,10 +102,10 @@ namespace ProyectoFinal.Repositorys
             return result;
         }
 
-        public async Task<IdentityUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
+        public async Task<User?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
             // Obtener el usuario de la base de datos utilizando Dapper y la instancia de IUnitOfWork
-            var result = await _unitOfWork.Connection.QuerySingleOrDefaultAsync<IdentityUser>(
+            var result = await _unitOfWork.Connection.QuerySingleOrDefaultAsync<User>(
                 "SELECT * FROM Users WHERE UPPER(UserName) = UPPER(@UserName)",
                 new { UserName = normalizedUserName },
                 _unitOfWork.Transaction);
@@ -112,36 +113,36 @@ namespace ProyectoFinal.Repositorys
             return result;
         }
 
-        public async Task<string?> GetEmailAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<string?> GetEmailAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el email del usuario
             return await Task.FromResult(user.Email);
         }
 
-        public async Task<bool> GetEmailConfirmedAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<bool> GetEmailConfirmedAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver true si el email del usuario está confirmado, false de lo contrario
             return await Task.FromResult(user.EmailConfirmed);
         }
 
-        public async Task<string?> GetNormalizedEmailAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<string?> GetNormalizedEmailAsync(User user, CancellationToken cancellationToken)
         {
             return await Task.FromResult(user.NormalizedEmail);
         }
 
-        public async Task<string?> GetNormalizedUserNameAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<string?> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el nombre de usuario normalizado
             return await Task.FromResult(user.UserName?.ToUpper());
         }
 
-        public async Task<string?> GetPasswordHashAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<string?> GetPasswordHashAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el passwordHash del usuario
             return await Task.FromResult(user.PasswordHash);
         }
 
-        public async Task<IList<string>> GetRolesAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<IList<string>> GetRolesAsync(User user, CancellationToken cancellationToken)
         {
             // Obtener los nombres de los roles asociados al usuario utilizando Dapper y la instancia de IUnitOfWork
             var result = await _unitOfWork.Connection.QueryAsync<string>(
@@ -152,34 +153,34 @@ namespace ProyectoFinal.Repositorys
             return result.ToList();
         }
 
-        public async Task<string> GetUserIdAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<string> GetUserIdAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el ID del usuario
             return await Task.FromResult(user.Id);
         }
 
-        public async Task<string?> GetUserNameAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<string?> GetUserNameAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el nombre de usuario
             return await Task.FromResult(user.UserName);
         }
 
-        public async Task<IList<IdentityUser>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken)
+        public async Task<IList<User>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken)
         {
             // Obtener los usuarios asociados al rol utilizando Dapper y la instancia de IUnitOfWork
-            var result = await _unitOfWork.Connection.QueryAsync<IdentityUser>(
+            var result = await _unitOfWork.Connection.QueryAsync<User>(
                 "SELECT u.* FROM Users u INNER JOIN UserRoles ur ON u.Id = ur.UserId \" +\r\n\"INNER JOIN Roles r ON ur.RoleId = r.Id WHERE UPPER(r.NormalizedName) = UPPER(@NormalizedName)",
                 new { NormalizedName = roleName }, _unitOfWork.Transaction);
             return result.ToList();
         }
 
-        public async Task<bool> HasPasswordAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<bool> HasPasswordAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver true si el usuario tiene un passwordHash, false de lo contrario
             return await Task.FromResult(!string.IsNullOrEmpty(user.PasswordHash));
         }
 
-        public async Task<bool> IsInRoleAsync(IdentityUser user, string roleName, CancellationToken cancellationToken)
+        public async Task<bool> IsInRoleAsync(User user, string roleName, CancellationToken cancellationToken)
         {
             // Verificar si el usuario está asociado con el rol utilizando Dapper y la instancia de IUnitOfWork
             var result = await _unitOfWork.Connection.ExecuteScalarAsync<bool>(
@@ -191,7 +192,7 @@ namespace ProyectoFinal.Repositorys
             return result;
         }
 
-        public async Task RemoveFromRoleAsync(IdentityUser user, string roleName, CancellationToken cancellationToken)
+        public async Task RemoveFromRoleAsync(User user, string roleName, CancellationToken cancellationToken)
         {
             try
             {
@@ -201,7 +202,7 @@ namespace ProyectoFinal.Repositorys
                     new { NormalizedName = roleName },
                     _unitOfWork.Transaction);
 
-                if (roleId == default(int))
+                if (roleId == default)
                 {
                     // Si el rol no existe, lanzar una excepción
                     throw new ArgumentException($"El rol '{roleName}' no existe.");
@@ -224,50 +225,49 @@ namespace ProyectoFinal.Repositorys
             }
         }
 
-        public async Task SetEmailAsync(IdentityUser user, string? email, CancellationToken cancellationToken)
+        public async Task SetEmailAsync(User user, string? email, CancellationToken cancellationToken)
         {
             // Asignar el email al usuario y devolver una tarea completada
             user.Email = email;
             await Task.CompletedTask;
         }
 
-        public async Task SetEmailConfirmedAsync(IdentityUser user, bool confirmed, CancellationToken cancellationToken)
+        public async Task SetEmailConfirmedAsync(User user, bool confirmed, CancellationToken cancellationToken)
         {
             // Asignar el valor confirmed a la propiedad EmailConfirmed del usuario y devolver una tarea completada
             user.EmailConfirmed = confirmed;
             await Task.CompletedTask;
         }
 
-        public async Task SetNormalizedEmailAsync(IdentityUser user, string? normalizedEmail, CancellationToken cancellationToken)
+        public async Task SetNormalizedEmailAsync(User user, string? normalizedEmail, CancellationToken cancellationToken)
         {
             // Establecer el email normalizado del usuario
             user.NormalizedEmail = normalizedEmail;
             await Task.CompletedTask;
         }
 
-        public async Task SetNormalizedUserNameAsync(IdentityUser user, string? normalizedName, CancellationToken cancellationToken)
+        public async Task SetNormalizedUserNameAsync(User user, string? normalizedName, CancellationToken cancellationToken)
         {
             // Establecer el nombre de usuario normalizado en la instancia de ApplicationUser
             user.NormalizedUserName = normalizedName;
             await Task.CompletedTask;
         }
 
-        public async Task SetPasswordHashAsync(IdentityUser user, string? passwordHash, CancellationToken cancellationToken)
+        public async Task SetPasswordHashAsync(User user, string? passwordHash, CancellationToken cancellationToken)
         {
             // Asignar el passwordHash al usuario y devolver una tarea completada
             user.PasswordHash = passwordHash;
             await Task.CompletedTask;
         }
 
-        public async Task SetUserNameAsync(IdentityUser user, string? userName, CancellationToken cancellationToken)
+        public async Task SetUserNameAsync(User user, string? userName, CancellationToken cancellationToken)
         {
             // Establecer el nombre de usuario en la instancia de ApplicationUser
             user.UserName = userName;
 
             await Task.CompletedTask;
         }
-
-        public async Task<IdentityResult> UpdateAsync(IdentityUser user, CancellationToken cancellationToken)
+        public async Task<IdentityResult> UpdateAsync(User user, CancellationToken cancellationToken)
         {
             try
             {
@@ -302,6 +302,61 @@ namespace ProyectoFinal.Repositorys
         public void Dispose()
         {
             _unitOfWork.Dispose();
+        }
+
+        public async Task<int> GetAccessFailedCountAsync(User user, CancellationToken cancellationToken)
+        {
+            return await Task.FromResult(user.AccessFailedCount);
+        }
+
+        public async Task<DateTimeOffset?> GetLockoutEndDateAsync(User user, CancellationToken cancellationToken)
+        {
+            return await Task.FromResult(user.LockoutEnd);
+        }
+
+        public async Task<int> IncrementAccessFailedCountAsync(User user, CancellationToken cancellationToken)
+        {
+            var sql = "UPDATE Users SET AccessFailedCount = AccessFailedCount + 1 WHERE Id = @Id";
+            var parameters = new { user.Id };
+
+            await _unitOfWork.Connection.ExecuteAsync(sql, parameters);
+            user.AccessFailedCount++;
+            return await Task.FromResult(user.AccessFailedCount);
+        }
+
+        public async Task ResetAccessFailedCountAsync(User user, CancellationToken cancellationToken)
+        {
+            var sql = "UPDATE Users SET AccessFailedCount = 0 WHERE Id = @Id";
+            var parameters = new { user.Id };
+            await _unitOfWork.Connection.ExecuteAsync(sql, parameters);
+            user.AccessFailedCount = 0;
+
+        }
+
+        public async Task SetLockoutEndDateAsync(User user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken)
+        {
+            await SetLockoutEnabledAsync(user, true, cancellationToken);
+            var sql = "UPDATE Users SET LockoutEnd = @LockoutEnd WHERE Id = @Id";
+            var parameters = new { user.Id, LockoutEnd = lockoutEnd };
+
+            await _unitOfWork.Connection.ExecuteAsync(sql, parameters);
+            user.LockoutEnd = lockoutEnd;
+
+        }
+
+        public async Task<bool> GetLockoutEnabledAsync(User user, CancellationToken cancellationToken)
+        {
+            return await Task.FromResult(user.LockoutEnabled);
+        }
+
+        public async Task SetLockoutEnabledAsync(User user, bool enabled, CancellationToken cancellationToken)
+        {
+            user.LockoutEnabled = enabled;
+
+            var sql = "UPDATE Users SET LockoutEnabled = @LockoutEnabled WHERE Id = @Id";
+
+            await _unitOfWork.Connection.ExecuteAsync(sql, new { user.LockoutEnabled, user.Id });
+
         }
     }
 }

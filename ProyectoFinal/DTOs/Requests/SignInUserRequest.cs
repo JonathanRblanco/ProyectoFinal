@@ -1,12 +1,13 @@
-﻿using MediatR;
+﻿using Ardalis.Result;
+using MediatR;
 using System.ComponentModel.DataAnnotations;
 
-namespace ProyectoFinal.DTOs.Commands.Requests
+namespace ProyectoFinal.DTOs.Requests
 {
-    public class SignInUserCommandRequest : IRequest<bool>
+    public class SignInUserRequest : IRequest<Result>
     {
         [Required(ErrorMessage = "El campo nombre es requerido")]
-        public string Nombre { get; set; }
+        public string UserName { get; set; }
         [Required(ErrorMessage = "La contraseña es requerida")]
         public string Password { get; set; }
     }

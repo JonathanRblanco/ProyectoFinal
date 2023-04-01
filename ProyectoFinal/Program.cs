@@ -1,3 +1,4 @@
+using ManejoPresupuestos.Servicios;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -7,7 +8,9 @@ using NLog;
 using NLog.Web;
 using ProyectoFinal.Contracts;
 using ProyectoFinal.Loggin;
+using ProyectoFinal.Models;
 using ProyectoFinal.Repositorys;
+using ProyectoFinal.Stores;
 using ProyectoFinal.UnitOfWork;
 using System.Data;
 
@@ -23,7 +26,6 @@ try
         opciones.Filters.Add(new AuthorizeFilter(politicaUsuariosAutenticados));
     });
     var services = builder.Services;
-    ////
     /*El patrón de inyección de dependencias es un patrón de diseño de software
      * que se utiliza para lograr una separación más clara entre los componentes
      * de una aplicación y para facilitar el mantenimiento y la prueba de la aplicación.
@@ -42,7 +44,7 @@ try
      * de dependencias desde el exterior.*/
     #region Servicios
     services.AddScoped<IDbConnection>(x => new SqlConnection(builder.Configuration.GetConnectionString("AppContext")));
-    services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+    services.AddScoped<IUsuarioRepository, UsersRepository>();
     services.AddScoped<IRolesRepository, RolesRepository>();
     services.AddScoped<IUserRolesRepository, UserRolesRepository>();
     services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -93,10 +95,11 @@ try
      * como bases de datos SQL, NoSQL y en memoria, lo que permite que la aplicación elija el proveedor
      * de almacenamiento de datos que mejor se adapte a sus necesidades.*/
     #region Identity
-    services.AddScoped<IUserStore<IdentityUser>, UserStore>();
+    services.AddScoped<IUserStore<User>, UserStore>();
     services.AddScoped<IRoleStore<IdentityRole>, RoleStore>();
-    services.AddIdentity<IdentityUser, IdentityRole>()
-        .AddDefaultTokenProviders();
+    services.AddIdentity<User, IdentityRole>()
+        .AddDefaultTokenProviders()
+        .AddErrorDescriber<MensajesDeErrorIdentity>();
 
     services.Configure<IdentityOptions>(options =>
     {
@@ -110,8 +113,8 @@ try
 
         // Lockout settings
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
-        options.Lockout.MaxFailedAccessAttempts = 5;
-        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 3;
+        options.Lockout.AllowedForNewUsers = false;
 
         // User settings
         options.User.AllowedUserNameCharacters =

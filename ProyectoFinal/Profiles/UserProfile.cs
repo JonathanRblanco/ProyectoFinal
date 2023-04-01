@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Identity;
-using ProyectoFinal.DTOs.Commands.Requests;
+using ProyectoFinal.DTOs.Requests;
+using ProyectoFinal.Models;
 
 namespace ProyectoFinal.Profiles
 {
@@ -8,7 +8,7 @@ namespace ProyectoFinal.Profiles
     {
         public UserProfile()
         {
-            CreateMap<CreateUserCommandRequest, IdentityUser>();
+            CreateMap<CreateUserRequest, User>();
         }
     }
 }

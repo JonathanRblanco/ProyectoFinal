@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using ProyectoFinal.Contracts;
 
-namespace ProyectoFinal.Repositorys
+namespace ProyectoFinal.Stores
 {
     //TODO : IMPLEMENTAR LOS METODOS DEL STORE UTILIZANDO EL REPOSITORIO DE ROLES DE IUNITOFWORK
     public class RoleStore : IRoleStore<IdentityRole>

@@ -1,5 +1,4 @@
 ﻿using Dapper;
-using Microsoft.AspNetCore.Identity;
 using ProyectoFinal.Contracts;
 using ProyectoFinal.Models;
 using System.Data;
@@ -17,19 +16,19 @@ namespace ProyectoFinal.Repositorys
      * y el mantenimiento de la aplicación.Además, el patrón Repository puede proporcionar una capa 
      * de abstracción adicional que permite cambiar el origen de datos subyacente sin cambiar el código de la lógica empresarial.
      * Esto puede ser útil si se desea cambiar de una base de datos relacional a una base de datos NoSQL o a un servicio web, por ejemplo.*/
-    public class UsuarioRepository : IUsuarioRepository
+    public class UsersRepository : IUsuarioRepository
     {
         private readonly IDbConnection _connection;
 
-        public UsuarioRepository(IDbConnection connection)
+        public UsersRepository(IDbConnection connection)
         {
             _connection = connection;
         }
-        public async Task<Usuario> GetUserByIdAsync(int Id)
+        public async Task<User> GetUserByIdAsync(int Id)
         {
-            return await _connection.QueryFirstAsync<Usuario>(getUserByIdQuery, new { Id });
+            return await _connection.QueryFirstAsync<User>(getUserByIdQuery, new { Id });
         }
-        public async Task<int> CreateUser(IdentityUser user, IDbTransaction transaction)
+        public async Task<int> CreateUser(User user, IDbTransaction transaction)
         {
             return await _connection.ExecuteAsync(createUsuQuery, user, transaction);
         }

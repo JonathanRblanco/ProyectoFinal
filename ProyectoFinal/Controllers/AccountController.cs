@@ -5,23 +5,24 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProyectoFinal.Contracts;
-using ProyectoFinal.DTOs.Commands.Requests;
+using ProyectoFinal.DTOs.Requests;
+using ProyectoFinal.Models;
 
 namespace ProyectoFinal.Controllers
 {
     [AllowAnonymous]
     public class AccountController : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
         private readonly IMediator _mediator;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
-          UserManager<IdentityUser> userManager,
-          SignInManager<IdentityUser> signInManager,
+          UserManager<User> userManager,
+          SignInManager<User> signInManager,
           IMediator mediator,
           IUnitOfWork unitOfWork,
           IMapper mapper,
@@ -45,39 +46,76 @@ namespace ProyectoFinal.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(CreateUserCommandRequest request)
+        public async Task<IActionResult> Register(CreateUserRequest request)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                return View(request);
+            }
+            try
             {
                 var result = await _mediator.Send(request);
 
-                if (!string.IsNullOrEmpty(result.Id))
+                if (result.IsSuccess)
                 {
-                    _logger.LogInformation($"Usuario registrado con exito: Usuario: {result.Id}");
-                    await _signInManager.SignInAsync(result, isPersistent: false);
-                    _logger.LogInformation($"Iniciando Sesion: Usuario: {result.Id}");
+                    _logger.LogInformation($"Usuario registrado con exito: Usuario: {result.Value.Id}");
+                    _logger.LogInformation($"Iniciando Sesion: Usuario: {result.Value.Id}");
                     return RedirectToAction("Index", "Home");
                 }
+                foreach (var e in result.ValidationErrors)
+                {
+                    ModelState.AddModelError("", e.ErrorMessage);
+                }
+                foreach (var e in result.Errors)
+                {
+                    ModelState.AddModelError("", e);
+                }
+                return View(request);
             }
-            return View(request);
+            catch (Exception ex)
+            {
+                _logger.LogError("Error : {0} {1}", ex.Message, ex.StackTrace);
+                ModelState.AddModelError("", "Error interno, intente nuevamente");
+                return View(request);
+            }
         }
         [HttpPost]
-        public async Task<IActionResult> Login(SignInUserCommandRequest request)
+        public async Task<IActionResult> Login(SignInUserRequest request)
         {
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var loginExitoso = await _mediator.Send(request);
-                if (loginExitoso)
+                return View(request);
+            }
+            try
+            {
+                var result = await _mediator.Send(request);
+
+                if (result.IsSuccess)
                 {
-                    _logger.LogInformation($"Usuario autenticado con exito: Usuario: {request.Nombre}");
-                    _logger.LogInformation($"Iniciando Sesion: Usuario: {request.Nombre}");
+                    _logger.LogInformation($"Usuario autenticado con exito: Usuario: {request.UserName}");
+                    _logger.LogInformation($"Iniciando Sesion: Usuario: {request.UserName}");
                     return RedirectToAction("Index", "Home");
                 }
-                ModelState.AddModelError("Password", "La contraseña o el usuario no coinciden");
+                foreach (var e in result.Errors)
+                {
+                    ModelState.AddModelError("", e);
+                }
+                foreach (var e in result.ValidationErrors)
+                {
+                    ModelState.AddModelError("", e.ErrorMessage);
+                }
+                return View(request);
             }
-            return View(request);
+
+            catch (Exception ex)
+            {
+                _logger.LogError("Error : {0} {1}", ex.Message, ex.StackTrace);
+                ModelState.AddModelError("", "Error interno, intente nuevamente");
+                return View(request);
+            }
         }
+
         [Authorize]
         public async Task<ActionResult> CerrarSesion()
         {
