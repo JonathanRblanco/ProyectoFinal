@@ -1,69 +1,99 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using ProyectoFinal.Contracts;
+using ProyectoFinal.Data;
+using ProyectoFinal.ServicesContracts;
 
 namespace ProyectoFinal.Stores
 {
     //TODO : IMPLEMENTAR LOS METODOS DEL STORE UTILIZANDO EL REPOSITORIO DE ROLES DE IUNITOFWORK
-    public class RoleStore : IRoleStore<IdentityRole>
+    public class RoleStore : IRoleStore<Rol>, IQueryableRoleStore<Rol>
     {
         private readonly IUnitOfWork _unitOfWork;
+
+        public IQueryable<Rol> Roles => _unitOfWork.RolesRepository.GetAll(_unitOfWork.Transaction);
+
         public RoleStore(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
-        public Task<IdentityResult> CreateAsync(IdentityRole role, CancellationToken cancellationToken)
+        public async Task<IdentityResult> CreateAsync(Rol role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _unitOfWork.RolesRepository.Create(role, _unitOfWork.Transaction);
+                return IdentityResult.Success;
+            }
+            catch (Exception ex)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = ex.Message });
+            }
         }
 
-        public Task<IdentityResult> DeleteAsync(IdentityRole role, CancellationToken cancellationToken)
+        public async Task<IdentityResult> DeleteAsync(Rol role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _unitOfWork.RolesRepository.Delete(role.Id, _unitOfWork.Transaction);
+                return IdentityResult.Success;
+            }
+            catch (Exception ex)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = ex.Message });
+            }
         }
 
-        public Task<IdentityRole?> FindByIdAsync(string roleId, CancellationToken cancellationToken)
+        public async Task<Rol?> FindByIdAsync(string roleId, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.RolesRepository.GetRoleById(roleId, _unitOfWork.Transaction);
         }
 
-        public Task<IdentityRole?> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
+        public async Task<Rol?> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.RolesRepository.GetRoleByName(normalizedRoleName, _unitOfWork.Transaction);
         }
 
-        public Task<string?> GetNormalizedRoleNameAsync(IdentityRole role, CancellationToken cancellationToken)
+        public async Task<string?> GetNormalizedRoleNameAsync(Rol role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return await Task.FromResult(role.NormalizedName);
         }
 
-        public Task<string> GetRoleIdAsync(IdentityRole role, CancellationToken cancellationToken)
+        public async Task<string> GetRoleIdAsync(Rol role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return await Task.FromResult(role.Id);
         }
 
-        public Task<string?> GetRoleNameAsync(IdentityRole role, CancellationToken cancellationToken)
+        public async Task<string?> GetRoleNameAsync(Rol role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return await Task.FromResult(role.Name);
         }
 
-        public Task SetNormalizedRoleNameAsync(IdentityRole role, string? normalizedName, CancellationToken cancellationToken)
+        public async Task SetNormalizedRoleNameAsync(Rol role, string? normalizedName, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            role.NormalizedName = normalizedName;
+            await Task.CompletedTask;
         }
 
-        public Task SetRoleNameAsync(IdentityRole role, string? roleName, CancellationToken cancellationToken)
+        public async Task SetRoleNameAsync(Rol role, string? roleName, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            role.Name = roleName;
+            await Task.CompletedTask;
         }
 
-        public Task<IdentityResult> UpdateAsync(IdentityRole role, CancellationToken cancellationToken)
+        public async Task<IdentityResult> UpdateAsync(Rol role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _unitOfWork.RolesRepository.Update(role, _unitOfWork.Transaction);
+                return IdentityResult.Success;
+            }
+            catch (Exception ex)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = ex.Message });
+            }
         }
         public void Dispose()
         {
-            _unitOfWork.Dispose();
+            //_unitOfWork.Dispose();
         }
     }
 }

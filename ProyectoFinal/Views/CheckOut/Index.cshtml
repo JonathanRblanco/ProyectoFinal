@@ -1,0 +1,209 @@
+﻿@using ProyectoFinal.DTO.Requests;
+@model StartCheckOutProcessRequest
+<style>
+    .tag {
+        background: #031926;
+        border-radius: 10px;
+        padding: 1px 1px;
+        font-size: 25px;
+        margin-right: 4px;
+        line-height: 35px;
+        color: white;
+    }
+
+    .shows-btn:hover {
+        transform: scale(1.05);
+        transition: transform 0.2s ease-in-out;
+    }
+
+</style>
+<div class="fade-in">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-md-6" id="compra">
+                    <h1>Proceso de compra: <span id="cine"></span></h1>
+                    <hr />
+                    <div id="sucursales">
+                    </div>
+                    <hr />
+                    <div id="funciones-block" style="display:none">
+                        <h3>Seleccione una funcion:</h3>
+                        <div id="funciones" style="display:flex;flex-wrap:wrap;">
+                        </div>
+                    </div>
+                    <div id="entradas-block" style="display:none">
+                        <hr />
+                        <h3>Cantidad de entradas:</h3>
+                        <select class="form-control col-4" id="entradas-select">
+                        </select>
+                    </div>
+                    <a class="btn btn-outline-info m-3" asp-action="Index" asp-controller="Home">Volver</a>
+                    <a class="btn btn-outline-warning m-3" id="pagar-btn" style="display:none"><i class="bi bi-cash-coin"> Ir al pago</i></a>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex">
+                        <input id="show-id" hidden/>
+                        <input id="total-price" hidden />
+                        <img src="@Url.Action("GetImage","Image",new GetImageRequest{Id=Model.MovieImageId})" class="poster" style="width: 40%; height: 80%; display: inline;" />
+                        <div class="ml-4">
+                            <h1 id="movie-name"></h1>
+                            <span class="tag" id="movie-clasification"></span>
+                            <hr />
+                            <div id="sucursal" style="display:none">
+                                <h5>Sucursal: <span id="sucursal-name"></span></h5>
+                            </div>
+                            <div id="sala" style="display:none">
+                                <hr />
+                                <h5>Sala: <span id="sala-numero"></span></h5>
+                            </div>
+                            <div id="fecha" style="display:none">
+                                <hr />
+                                <h5>Fecha: <span id="date"></span></h5>
+                            </div>
+                            <div id="entradas" style="display:none">
+                                <hr />
+                                <h5>Entradas: <span id="entradas-cantidad"></span></h5>
+                            </div>
+                            <div id="total" style="display:none">
+                                <hr />
+                                <h3><b>Total:</b><span id="total-monto"></span></h3>
+                            </div>
+                            <!-- Agrega aquí los elementos adicionales -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    let shows = []
+    let branches = []
+    let cine;
+    var promises = [];
+    let branchSelectedId;
+    let cineId;
+    let total;
+    let totalTickets;
+    let showId;
+    $.get("@Url.Action("GetMovies","Movies")?Id=" + '@Model.MovieId', function (data) {
+        $.each(data, function (index, value) {
+            $("#movie-name").text(value.name)
+            $("#movie-clasification").text(value.clasification.description)
+        });
+    });
+
+    var promise1 = $.get("@Url.Action("GetCinemas","Cinemas")?Id=" + '@Model.CinemaId').done(function (cines) {
+        cine = cines[0];
+        $("#cine").text(cine.name);
+    });
+
+    promises.push(promise1);
+
+    $.when.apply($, promises).done(function () {
+        $.get("@Url.Action("GetCinemasBranches","Branches")?CinemaId=" + '@Model.CinemaId').done(function (branchesData) {
+            branches.push.apply(branches, branchesData);
+
+            var showPromises = [];
+
+            $.each(branches, function (index, value) {
+                var showPromise = $.get("@Url.Action("Get","Shows")?MovieId=" + '@Model.MovieId' + "&BranchId=" + value.id + '&OnlyValid=true').done(function (showsData) {
+                    shows.push.apply(shows, showsData);
+                });
+
+                showPromises.push(showPromise);
+            });
+
+            $.when.apply($, showPromises).done(function () {
+                var sucursalesConShows = branches.filter(function (sucursal) {
+                    return shows.some(function (show) {
+                        return show.room.cinemaBranchId === sucursal.id;
+                    });
+                });
+                $.each(sucursalesConShows, function (index, value) {
+                    var button = $('<button class="btn btn-outline-warning m-2 sucursal-btn" data-id="' + value.id + '">').text(value.name);
+                    $("#sucursales").append(button)
+                })
+                $(".sucursal-btn").on("click", function () {
+                    $("#sucursal-name").text($(this).text())
+                    $("#show-id").val('')
+                    $("#total-price").val('')
+                    $("#sala-numero").text('')
+                    $("#date").text('');
+                    $("#entradas-cantidad").text('')
+                    $("#total-monto").text('')
+                    $("#entradas-select").empty();
+                    $("#entradas-block").hide();
+                    $("#entradas").hide();
+                    $("#total").hide();
+                    $("#sucursal").show();
+                    $("#funciones-block").show();
+                    $("#funciones").empty();
+                    $("#pagar-btn").hide();
+                    branchSelectedId = $(this).data('id')
+                    $.each(shows, function (index, value) {
+                        if (value.room.cinemaBranchId == branchSelectedId) {
+                            var cardHtml = '<div class="card m-2 shows-btn" style="width: 25%;cursor:pointer" data-id="' + value.id + '">' +
+                                '<ul class="list-group list-group-flush">' +
+                                '<li class="list-group-item">Tipo de funcion: ' + value.showType.description + '</li>' +
+                                '<li class="list-group-item">Dia: ' + moment(value.date).format("DD-MM-YYYY").replace(".", "") + '</li>' +
+                                '<li class="list-group-item">Hora: ' + moment(value.date).format("HH:mm").replace(".", "") + '</li>' +
+                                '<li class="list-group-item">Sala: ' + value.room.number + '</li>' +
+                                '<li class="list-group-item">Precio: $' + value.price + '</li>' +
+                                '</ul>' +
+                                '</div>';
+                            $("#funciones").append(cardHtml)
+                        }
+                    })
+                    $(".shows-btn").on("click", function () {
+                        $("#show-id").val('')
+                        $("#total-price").val('')
+                        $("#pagar-btn").hide()
+                        $("#entradas-select").empty();
+                        $("#sala-numero").text('')
+                        $("#total-monto").text('')
+                        $("#entradas").hide();
+                        $("#total").hide();
+                        let show = shows.find(s => s.id == $(this).data('id'))
+                        $("#show-id").val(show.id)
+                        $("#sala-numero").text(show.room.number + ' - ' + show.showType.description)
+                        $("#sala").show();
+                        $("#date").text(moment(show.date).format("DD/MM/YYYY HH:mm [hs]"));
+                        $("#fecha").show();
+                        var options = '<option value="0">Seleccione una opcion</option>';
+                        for (var i = 1; i <= show.capacity; i++) {
+                            options += '<option value="' + i + '">' + i + '</option>';
+                        }
+                        $('#entradas-select').html(options);
+                        $("#entradas-block").show();
+                        $("#entradas-select").on('change', function () {
+                            $("#total-price").val('')
+                            if ($(this).val() != 0) {
+                                $("#entradas-cantidad").text($(this).val())
+                                $("#total-monto").text('$' + $(this).val() * show.price)
+                                $("#total-price").val($(this).val() * show.price)
+                                $("#entradas").show();
+                                $("#total").show();
+                                $("#compra").append()
+                                $("#pagar-btn").show()
+                            }
+                        })
+                    })
+                    $("#pagar-btn").on('click', function () {
+                        $.ajax({
+                            url: '@Url.Action("Payment","CheckOut")',
+                            type: 'Get',
+                            success: function (data) {
+                                $('#myModal .modal-body').html(data);
+                                $('#myModal').modal('show');
+                            }, error: function (jqXHR, textStatus, errorThrown) {
+                                mensaje("Algo salio mal, intenta nuevamente, error: " + errorThrown, "error")
+                            }
+                        });
+                    })
+                })
+            });
+        });
+    });
+</script>

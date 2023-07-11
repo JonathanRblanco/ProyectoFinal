@@ -1,0 +1,33 @@
+﻿@using ProyectoFinal.Data.Email;
+@model ReceiptEmailModel
+@{
+    this.Layout = "Templates/Email/_EmailLayout";
+}
+<div class="container mt-5 mb-5">
+    <div class="d-flex justify-content-center row">
+        <div class="col-md-10">
+            <div class="receipt bg-white p-3 rounded">
+                <h4 class="mt-2 mb-3">Tu compra se ha realizado con exito!</h4>
+                <h6 class="name">Hola @Model.UserName,</h6><span class="fs-12 text-black-50">Tu pedido ha sido confirmado</span>
+                <hr>
+                <div class="d-flex flex-row justify-content-between align-items-center order-details">
+                    <div><span class="d-block fs-12">Pelicula: </span><span class="font-weight-bold">@Model.MovieName</span></div>
+                    <div><span class="d-block fs-12">Fecha: </span><span class="font-weight-bold">@Model.Date.ToString("dd/MM/yyy HH:mm") hs</span></div>
+                    <div><span class="d-block fs-12">Sucursal: </span><span class="font-weight-bold">@Model.BranchCinemaName</span></div>
+                    <div><span class="d-block fs-12">Direccion: </span><span class="font-weight-bold">@Model.Address</span></div>
+                    <div><span class="d-block fs-12">Sala: </span><span class="font-weight-bold">@Model.Room</span></div>
+                    <div><span class="d-block fs-12">Cantidad de entradas: </span><span class="font-weight-bold text-success">@Model.AmountOfTickets</span></div>
+                    <div><span class="d-block fs-12">Total: </span><span class="font-weight-bold text-success">@Model.Total</span></div>
+                    <div><span class="d-block fs-12">Codigo de la operación: </span><span class="font-weight-bold text-success">@Model.Code</span></div>
+                </div>
+                <hr>
+                <span class="d-block">Que lo disfrutes!</span>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center footer">
+                    <div class="thanks"><span class="d-block font-weight-bold">Gracias por elegirnos </span><span><b>Cinenet team</b></span></div>
+                    <div class="d-flex flex-column justify-content-end align-items-end"><span class="d-block font-weight-bold">Necesitas ayuda? </span><span>Llama al - @Model.BranchPhone o contacta la dirección de correo - @Model.BranchEmail</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

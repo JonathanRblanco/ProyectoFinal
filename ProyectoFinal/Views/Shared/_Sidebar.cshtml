@@ -1,0 +1,126 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@using ProyectoFinal.DTO.Requests;
+@using ProyectoFinal.Data;
+@inject UserManager<User> userManager
+@{
+    var user = await userManager.GetUserAsync(User);
+}
+<!-- Main Sidebar Container -->
+<aside class="main-sidebar sidebar-dark-purple elevation-4">
+    <!-- Brand Logo -->
+    <a asp-controller="Home" asp-action="Index" class="navbar-brand mt-1 main-content">
+        <img src="~/Imagenes/Logocinenet-07.svg" class="brand-image" style="opacity: .8;margin: -25px 0 0 -3px" width="230">
+    </a>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar user panel (optional) -->
+        @if (User.Identity.IsAuthenticated)
+        {
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="image">
+                    <img src="@Url.Action("GetImage","Image",new GetImageRequest{Id=user.ImageId})" class="img-circle elevation-2" alt="User Image" id="side-img-profile">
+                </div>
+                <div class="info">
+                    <a asp-action="Profile" asp-controller="Account" class="d-block main-content" id="see-profile">@user.UserName</a>
+                </div>
+            </div>
+        }
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <!-- Add icons to the links using the .nav-icon class
+                     with font-awesome or any other icon font library -->
+                <li class="nav-item">
+                    <a asp-controller="Account" asp-action="MyPayments" class="nav-link link-subrayado main-content">
+                        <i class="bi bi-piggy-bank-fill"></i>
+                        <p>
+                            Mis Compras
+                        </p>
+                    </a>
+                </li>
+                @if (User.IsInRole("Admin") || User.IsInRole("UsuExt"))
+                {
+                    <li class="nav-item has-treeview menu-open">
+                        <a href="#" class="nav-link active">
+                            <i class="nav-icon fas fa-wrench"></i>
+                            <p>
+                                Administrar
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a asp-controller="Users" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-people nav-icon"></i>
+                                        <p>Usuarios</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="Roles" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-slash-circle-fill nav-icon"></i>
+                                        <p>Roles</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="Cinemas" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-buildings-fill nav-icon"></i>
+                                        <p>Cines</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="Genders" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-slack"></i>
+                                        <p>Generos</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="Clasifications" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-sliders"></i>
+                                        <p>Clasificaciones</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="Movies" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-film nav-icon"></i>
+                                        <p>Peliculas</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="ShowsType" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-list-check"></i>
+                                        <p>Tipos de Funciones</p>
+                                    </a>
+                                </li>
+                            }
+                            @if (User.IsInRole("UsuExt"))
+                            {
+                                <li class="nav-item">
+                                    <a asp-controller="Branches" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-building-fill nav-icon"></i>
+                                        <p>Sucursales</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="Rooms" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-diagram-3-fill"></i>
+                                        <p>Salas</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="Shows" asp-action="Index" class="nav-link link-subrayado main-content">
+                                        <i class="bi bi-camera-reels-fill"></i>
+                                        <p>Funciones</p>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </li>
+                }
+            </ul>
+        </nav>
+        <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+</aside>

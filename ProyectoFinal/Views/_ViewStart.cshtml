@@ -1,9 +1,14 @@
 ﻿@{
-    if (Context.Request.Path == "/Account/Login" || Context.Request.Path == "/Account/Register") {
+    if (Context.Request.Path == "/Account/Login" || Context.Request.Path == "/Account/Register" || Context.Request.Path == "/Account/ValidateChangePassword" || Context.Request.Path == "/Account/ChangePassword") {
         ViewBag.title = "Projecto Final";
         Layout = "_LayoutLogin";
     }
-    else {
+    else if (Context.Request.Path == "/Account/AccessDenied")
+    {
+        Layout = "_AccessDeniedLayout";
+    }
+    else
+    {
         Layout = "_Layout";
     }
 }

@@ -1,0 +1,175 @@
+﻿@using ProyectoFinal.DTO.Responses;
+@model EditUserResponse
+<div style="max-width: 1200px;">
+    <!-- Contenido del modal aquí -->
+    <form id="quickForm">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">Editar Usuario</h3>
+            </div>
+            <div class="card-body">
+                <input hidden readonly name="Id" value="@Model.Id" />
+                <div class="form-group">
+                    <label>Nombre de Usuario</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">@@</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Nombre de Usuario" value="@Model.UserName" name="UserName">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        </div>
+                        <input type="email" class="form-control" placeholder="Email" value="@Model.Email" name="Email">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Numero de Telefono </label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Numero de Telefono" value="@Model.PhoneNumber" name="PhoneNumber">
+                    </div>
+                </div>
+                <label>Estado</label>
+                <div class="input-group mb-3">
+                    <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                        <input type="checkbox" class="custom-control-input" id="estado" name="LockoutEnabled" value="true" @(Model.LockoutEnabled ? "" : "checked")>
+                        <label class="custom-control-label" for="estado">Habilitado</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div style="display:@(Model.LockoutEnabled?"block":"none")" id="fecha-fin">
+                        <label>Inactivo hasta: </label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                            </div>
+                            <input type="datetime-local" class="form-control" value="@(Model.LockoutEnd.HasValue?Model.LockoutEnd.Value.ToString("yyyy-MM-ddTHH:mm"):null)" name="LockoutEnd" id="lockout-end">
+                        </div>
+                    </div>
+                </div>
+                <label>Roles: </label>
+                @foreach (var role in Model.AllRoles)
+                {
+                    <div class="input-group mb-3">
+                        <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                            <input type="checkbox" name="NewRoles" id="rol-@(role.Id)" class="custom-control-input" value="@role.Name" @(Model.UsuRoles.Contains(role.Name) ? "checked" : "") />
+                            <label class="custom-control-label" for="rol-@(role.Id)">@role.Name</label>
+                        </div>
+                    </div>
+                }
+                @foreach (var role in Model.UsuRoles)
+                {
+                    <div hidden>
+                        <input type="checkbox" name="OldRoles" value="@role" checked />
+                        <label>@role</label>
+                    </div>
+                }
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="cancelar"> <i class="bi bi-arrow-return-left mr-1"></i>Cancelar</button>
+                <button type="submit" class="btn btn-outline-info float-right"> <i class="bi bi-download mr-1"></i>Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function () {
+        $("#estado").on('change', function () {
+            if ($(this).is(":checked")) {
+                $("#fecha-fin").css("display", "none")
+                $("#lockout-end").val('')
+            } else {
+                $("#fecha-fin").css("display", "block")
+            }
+        })
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: '@Url.Action("Edit","Users")',
+                        type: "POST",
+                        data: formData,
+                        success: function (result) {
+                            // Manejar la respuesta de la petición AJAX
+                            if (result.error) {
+                                darMensajeModal("Error", result.mensaje, "error")
+                            }
+                            else {
+                                darMensajeModal("Exito", result.mensaje, "success", function () {
+                                    $("#cancelar").click()
+                                    $('#example').DataTable().destroy();
+                                    cargarTabla()
+                                })
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // Manejar los errores de la petición AJAX
+                            darMensajeModal("Error", errorThrown, "error")
+                        }
+                    });
+                }
+            });
+            $.validator.addMethod("phonevalidation", function (value, element) {
+                return this.optional(element) || /^[0-9]+$/.test(value);
+            }, "Solo se permiten números");
+
+            $('#quickForm').validate({
+                rules: {
+                    UserName: {
+                        required: true
+                    },
+                    Email: {
+                        required: true,
+                        email: true
+                    },
+                    LockoutEnd: {
+                        required: {
+                            depends: function (element) {
+                                return !$("#estado").is(":checked");
+                            }
+                        }
+                    },
+                    PhoneNumber:{
+                        minlength: 10,
+                        maxlength: 10,
+                        phonevalidation: true
+                    }
+                },
+                messages: {
+                    UserName: 'El nombre de usuario es requerido',
+                    Email: {
+                        required: 'El email es requerido',
+                        email: 'Ingresa un email valido'
+                    },
+                    LockoutEnd: 'Si el usuario no esta habilitado, la fecha del fin del bloqueo debe ser establecida',
+                    PhoneNumber: {
+                        minlength: "El número de teléfono debe tener 10 dígitos",
+                        maxlength: "El número de teléfono debe tener 10 dígitos",
+                        phonevalidation: "Solo se admiten números"
+                    }
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    })
+</script>
+

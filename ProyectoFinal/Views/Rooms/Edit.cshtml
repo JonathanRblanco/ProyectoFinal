@@ -1,0 +1,152 @@
+﻿@using ProyectoFinal.DTO.Responses;
+@model GetRoomByIdResponse
+<div style="max-width: 1200px;">
+    <!-- Contenido del modal aquí -->
+    <form id="editRoom">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">Editar Sala</h3>
+            </div>
+            <div class="card-body">
+                <input hidden readonly name="Id" value="@Model.Id" />
+                <div class="form-group">
+                    <label>Numero de Sala</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-film"></i></span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Numero de sala" name="Number" value="@Model.Number">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Capacidad</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-body-text"></i></span>
+                        </div>
+                        <input class="form-control" placeholder="Capacidad" name="Capacity" value="@Model.Capacity">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>A que cine pertenece</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-file-earmark-play"></i></span>
+                        </div>
+                        <select name="cinemaId" class="form-control" id="cines">
+                            <option value="0">Seleccione</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>A que sucursal pertenece</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-file-earmark-play"></i></span>
+                        </div>
+                        <select name="CinemaBranchId" class="form-control" id="sucursales">
+                            <option value="0">Seleccione</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="cancelar"> <i class="bi bi-arrow-return-left mr-1"></i>Cancelar</button>
+                <button type="submit" class="btn btn-outline-info float-right"> <i class="bi bi-download mr-1"></i>Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function () {
+        $.get("@Url.Action("GetCinemas","Cinemas")?ByUser=true", function (data) {
+            var options = "";
+            options += '<option value="0">Seleccione</option>';
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.CinemaBranch.CineId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"' + selected + '>' + value.name + '</option>';
+            });
+            $('#cines').html(options);
+            $.get("@Url.Action("GetCinemasBranches","Branches")?CinemaId=" + $("#cines").val(), function (data) {
+                var options = "";
+                $.each(data, function (index, value) {
+                    options += '<option value="">Seleccione</option>';
+                    var selected = (value.id == '@Model.CinemaBranchId') ? 'selected' : '';
+                    options += '<option value="' + value.id + '" ' + selected + '>' + value.name + '</option>';
+                });
+                $('#sucursales').html(options);
+            });
+        });
+        $("#cines").on("change", function () {
+            $.get("@Url.Action("GetCinemasBranches","Branches")?CinemaId=" + $(this).val(), function (data) {
+                var options = "";
+                options += '<option value="">Seleccione</option>';
+                $.each(data, function (index, value) {
+                    options += '<option value="' + value.id + '">' + value.name + '</option>';
+                });
+                $('#sucursales').html(options);
+            });
+        })
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: '@Url.Action("Edit","Rooms")',
+                        type: "POST",
+                        data: formData,
+                        success: function (result) {
+                            // Manejar la respuesta de la petición AJAX
+                            if (result.error) {
+                                darMensajeModal("Error", result.mensaje, "error")
+                            }
+                            else {
+                                darMensajeModal("Exito", result.mensaje, "success", function () {
+                                    $("#cancelar").click()
+                                    $('#salas').DataTable().destroy();
+                                    cargarTabla()
+                                })
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // Manejar los errores de la petición AJAX
+                            darMensajeModal("Error", errorThrown, "error")
+                        }
+                    });
+                }
+            });
+
+            $('#editRoom').validate({
+                rules: {
+                    Number: {
+                        required: true
+                    },
+                    Capacity: {
+                        required: true
+                    },
+                    CinemaBranchId:{
+                        required: true
+                    }
+                },
+                messages: {
+                    Number: 'El numero de la sala es requerido',
+                    Capacity: 'La capacidad de la sala es requerida',
+                    CinemaBranchId: 'Debe seleccionar una opcion'
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    })
+</script>
+

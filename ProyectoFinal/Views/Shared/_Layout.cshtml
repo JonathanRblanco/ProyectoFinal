@@ -1,55 +1,131 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="height:auto">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ProyectoFinal</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/ProyectoFinal.styles.css" asp-append-version="true" />
+    <title>@ViewData["Title"] CineNet</title>
+    <link rel="icon" type="image/svg+xml" href="~/Imagenes/ticket.svg" sizes="any" />
+    @*<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />*@
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/adminlte/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.4/font/bootstrap-icons.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="~/adminlte/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.css">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <link href="~/adminlte/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script src="~/adminlte/plugins/jquery/jquery.min.js"></script>
+    <script src="~/adminlte/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="~/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="~/adminlte/dist/js/adminlte.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <link href="~/adminlte/plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.css">
+    <script src="~/adminlte/plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ProyectoFinal</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        @if(User.IsInRole("Usu")){
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="CerrarSesion">Cerrar Sesion</a>
-                            </li>
-                        }
-                        
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+<body class="hold-transition @(User.IsInRole("Usu")?"sidebar-mini":"sidebar-collapse") layout-navbar-fixed layout-footer-fixed" style="height:auto">
+    <div class="wrapper">
+        <partial name="_Navbar" />
+        @if (User.IsInRole("Usu"))
+        {
+            <aside class="main-sidebar" style="position:fixed">
+                <partial name="_Sidebar" />
+            </aside>
+        }
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2023 - ProyectoFinal - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <div class="content-wrapper" style="margin-top:4%">
+            <section id="content" class="content fade-in">
+                @RenderBody()
+            </section>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    </div>
+    <div class="modal fade" id="myModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-body">
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+    <script>
+        function mensaje(mensaje, icon) {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            })
+
+            Toast.fire({
+                icon: icon,
+                title: mensaje,
+            })
+        };
+
+        function darMensajeModal(titulo, mensaje, icon, callback = function () { }) {
+            Swal.fire({
+                icon: icon,
+                title: titulo,
+                text: mensaje,
+                allowOutsideClick: false
+            }
+            ).then((result) => {
+                if (result.isConfirmed && typeof callback === 'function') {
+                    callback();
+                }
+            })
+        };
+        let darkModeButton = document.getElementById('modo');
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+        // Aplica el estado actual del modo oscuro al cargar la página
+        if (isDarkMode) {
+            enableDarkMode();
+        } else {
+            disableDarkMode();
+        }
+
+        // Agrega el event listener al botón para cambiar el modo y guardar el estado en el localStorage
+        darkModeButton.addEventListener('click', toggleDarkMode);
+
+        // Función para cambiar el modo oscuro
+        function toggleDarkMode() {
+            if (isDarkMode) {
+                disableDarkMode();
+            } else {
+                enableDarkMode();
+            }
+
+            // Guarda el estado actual del modo oscuro en el localStorage
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+
+        // Función para habilitar el modo oscuro
+        function enableDarkMode() {
+            document.body.classList.add('dark-mode');
+            isDarkMode = true;
+        }
+
+        // Función para deshabilitar el modo oscuro
+        function disableDarkMode() {
+            document.body.classList.remove('dark-mode');
+            isDarkMode = false;
+        }
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

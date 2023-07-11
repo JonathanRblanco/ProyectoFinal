@@ -1,0 +1,181 @@
+﻿@using ProyectoFinal.DTO.Requests;
+@using ProyectoFinal.DTO.Responses;
+@model GetMovieByIdResponse
+<div style="max-width: 1200px;">
+    <!-- Contenido del modal aquí -->
+    <form id="EditMovie" enctype="multipart/form-data">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">Editar Pelicula</h3>
+            </div>
+            <div class="card-body">
+                <input hidden readonly name="Id" value="@Model.Id" />
+                <input hidden readonly name="ImageId" value="@Model.ImageId" />
+                <div class="form-group mx-auto text-center">
+                    <img src="@Url.Action("GetImage","Image",new GetImageRequest{Id=Model.ImageId})" id="imagen-cartelera" class="poster" style="width: 70%;height: 500px" />
+                </div>
+                <div class="form-group">
+                    <label>Nombre de Pelicula</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">@@</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Nombre de Pelicula" value="@Model.Name" name="Name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Synopsis</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                        </div>
+                        <textarea class="form-control" placeholder="Sinopsis" name="Synopsis">@Model.Synopsis</textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Duration</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-map"></i></span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Duration" value="@Model.Duration" name="Duration">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Actors</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-compass"></i></span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Actors" value="@Model.Actors" name="Actors">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Director</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-people-fill"></i></span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Director" value="@Model.Director" name="Director">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                        </div>
+                        <select name="GenderId" class="form-control" id="generos"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Clasification</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-file-earmark-play"></i></span>
+                        </div>
+                        <select name="ClasificationId" class="form-control" id="clasificaciones"></select>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" id="cancelar"> <i class="bi bi-arrow-return-left mr-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-outline-info float-right"> <i class="bi bi-download mr-1"></i>Guardar</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function () {
+        $.get("@Url.Action("Get","Genders")", function (data) {
+            var options = "";
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.GenderId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"'+selected+'>' + value.description + '</option>';
+            });
+            $('#generos').html(options);
+        });
+        $.get("@Url.Action("Get","Clasifications")", function (data) {
+            var options = "";
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.ClasificationId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"'+selected+'>' + value.description + '</option>';
+            });
+            $('#clasificaciones').html(options);
+        });
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var formData = new FormData(form);
+                    $.ajax({
+                        url: '@Url.Action("Edit","Movies")',
+                        type: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (result) {
+                            // Manejar la respuesta de la petición AJAX
+                            if (result.error) {
+                                darMensajeModal("Error", result.mensaje, "error")
+                            }
+                            else {
+                                darMensajeModal("Exito", result.mensaje, "success", function () {
+                                    $("#cancelar").click()
+                                    $('#Peliculas').DataTable().destroy();
+                                    cargarTabla()
+                                })
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // Manejar los errores de la petición AJAX
+                            darMensajeModal("Error", errorThrown, "error")
+                        }
+                    });
+                }
+            });
+            $.validator.addMethod("phonevalidation", function (value, element) {
+                return this.optional(element) || /^[0-9]+$/.test(value);
+            }, "Solo se permiten números");
+
+            $('#EditMovie').validate({
+                rules: {
+                    Name: {
+                        required: true
+                    },
+                    Synopsis: {
+                        required: true
+                    },
+                    Duration: {
+                        required: true
+                    },
+                    Actors: {
+                        required: true
+                    },
+                    Director: {
+                        required: true
+                    }
+                },
+                messages: {
+                    Name: 'El nombre de usuario es requerido',
+                    Synopsis: 'La Sinopsis es requerida',
+                    Duration: 'La duracion es requerida',
+                    Actors: 'Los actores son requeridos',
+                    Director: 'El director es requerido'
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    })
+</script>

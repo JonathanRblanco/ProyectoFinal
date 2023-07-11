@@ -1,80 +1,78 @@
-﻿@using ProyectoFinal.DTOs.Requests;
+﻿@using Microsoft.AspNetCore.Mvc.ModelBinding;
+@using ProyectoFinal.DTO.Requests;
 @model SignInUserRequest
+@{
+    var returnUrl = ViewData["ReturnUrl"]?.ToString();
+}
+<div>
+    <form asp-action="Login" method="post">
+        <input asp-for="@Model.ReturnUrl" value="@(returnUrl is null?Model.ReturnUrl:returnUrl)" hidden />
+        <div class="card-body p-5 text-center form-form">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-outline-danger" role="alert">
+                    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                </div>
+            }
+            <div class="mb-md-5 mt-md-4 pb-5 login-form">
+                <h2 class="fw-bold mb-2">Inicio de Sesion</h2>
+                <p class="text-white-50 mb-5">Ingresa tu usuario y contraseña!</p>
+                <div class="form-outline form-white mb-4">
+                    <label class="form-label" asp-for="@Model.UserName">Nombre de Usuario</label>
+                    <div class="input-group">
+                        <div class="input-group">
+                            <span asp-validation-for="@Model.UserName" class="text-danger"></span>
+                        </div>
+                        <input type="text" asp-for="@Model.UserName" class="form-control form-control-lg" placeholder="Ingresá tu usuario" />
+                    </div>
+                </div>
+                <div class="form-outline form-white mb-4">
+                    <label class="form-label" asp-for="@Model.Password">Contraseña</label>
+                    <div class="input-group">
+                        <div class="input-group">
+                            <span asp-validation-for="@Model.Password" class="text-danger"></span>
+                        </div>
+                        <input type="password" asp-for="@Model.Password" class="form-control form-control-lg" placeholder="Ingresá tu contraseña" />
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-8">
+                        <div class="icheck-primary">
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" id="customCheckbox2" checked asp-for="@Model.RememberMe">
+                                <label for="customCheckbox2" class="custom-control-label"> Recordarme</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-4 pt-1">
+                    <button class="btn btn-outline-light btn-lg px-5" type="submit">Ingresar</button>
 
-<form asp-action="Login" method="post">
-    <div class="card-body p-5 text-center">
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-danger" role="alert">
-                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                    <hr style="background-color:white" />
+
+                    <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="ExternalLogin" asp-route-Provider="Google" asp-route-ReturnUrl="@returnUrl">
+                        <i class="fab fa-google me-2 mr-2"></i>Ingresa con Google
+                    </a>
+                </div>
+                <p class="forgot-pass-new">
+                    <a asp-action="ValidateChangePassword" asp-controller="Account">Olvidaste tu contraseña?</a>
+                    <a asp-action="Register" asp-controller="Account">Necesitas registrarte?</a>
+                </p>
+                @*<div class="d-flex justify-content-center text-center mt-4 pt-1">
+                <a href="#!" class="text-white"><i class="fab fa-facebook-f fa-lg"></i></a>
+                <a href="#!" class="text-white"><i class="fab fa-twitter fa-lg mx-4 px-2"></i></a>
+                <a href="#!" class="text-white"><i class="fab fa-google fa-lg"></i></a>
+                </div>*@
+
             </div>
-        }
-        <div class="mb-md-5 mt-md-4 pb-5">
-
-            <h2 class="fw-bold mb-2 text-uppercase">Inicio de Sesion</h2>
-            <p class="text-white-50 mb-5">Ingresa tu usuario y contraseña!</p>
-
-            <div class="form-outline form-white mb-4">
-                <span asp-validation-for="@Model.UserName" class="text-danger"></span>
-                <input asp-for="@Model.UserName" class="form-control form-control-lg" />
-                <label class="form-label" asp-for="@Model.UserName">Nombre de Usuario</label>
-            </div>
-
-            <div class="form-outline form-white mb-4">
-                <span asp-validation-for="@Model.Password" class="text-danger"></span>
-                <input type="password" asp-for="@Model.Password" class="form-control form-control-lg" />
-                <label class="form-label" asp-for="@Model.Password">Contraseña</label>
-            </div>
-
-            @*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
-
-            <button class="btn btn-outline-light btn-lg px-5" type="submit">Ingresar</button>
-
-            @*<div class="d-flex justify-content-center text-center mt-4 pt-1">
-            <a href="#!" class="text-white"><i class="fab fa-facebook-f fa-lg"></i></a>
-            <a href="#!" class="text-white"><i class="fab fa-twitter fa-lg mx-4 px-2"></i></a>
-            <a href="#!" class="text-white"><i class="fab fa-google fa-lg"></i></a>
-            </div>*@
-
-        </div>
-
-        <div>
+            @*<div>
             <p class="mb-0">
-                No tienes cuenta? <a href="@Url.Action("Register")" class="text-white-50 fw-bold">Registrarse</a>
+            No tienes cuenta? <a href="@Url.Action("Register")" class="text-white-50 fw-bold">Registrarse</a>
             </p>
+            </div>*@
         </div>
-       
-
-    </div>
-</form>
-
-@*<div class="container-lg mt-5">
-    <div class="mx-auto" style="max-width: 320px;">
-        <div class="Box">
-            <div class="Box-header">
-                <h3 class="Box-title">Iniciar Sesion</h3>
-            </div>
-            <div class="Box-body">
-
-                <form asp-action="Login" method="post">
-                    <div class="form-group">
-                        <label for="Nombre">Nombre de Usuario</label>
-                        <input type="text" class="form-control" asp-for="@Model.Nombre"/>
-                        <span asp-validation-for="@Model.Nombre" class="text-danger"></span>
-                    </div>
-                    <div class="form-group">
-                        <label for="Password">Contraseña</label>
-                        <input type="password" class="form-control" asp-for="@Model.Password" />
-                        <span asp-validation-for="@Model.Password" class="text-danger"></span>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block mt-3">
-                        Confirmar
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>*@
+    </form>
+</div>
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

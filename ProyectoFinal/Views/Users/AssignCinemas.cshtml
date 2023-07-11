@@ -1,0 +1,65 @@
+﻿@using ProyectoFinal.DTO.Responses;
+@model AssignCinemaResponse
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="box-title"><i class="fa fa-angle-double-right"></i> Asignacion de empresas, a:</h3>
+    </div>
+    <div class="card-body">
+        <form id="asignarEmpresa" method="post">
+            <div class="nav-tabs-custom form-horizontal tab-warning">
+                <div class="tab-content">
+                    <div class="tab-pane box-body active" id="emgs">
+                        <div class="col-md-12 center-block">
+                            <div id="empresa_id_multiple" class="bootstrap-duallistbox-container row">
+                                <div class="box1 col-md-12">
+                                    @{
+                                        @Html.DropDownList("empresa_id", Model.CinemasList, null, new { multiple = "multiple" })
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal" id="cancelar"><i class="bi bi-arrow-return-left mr-1"></i>Cancelar</button>
+                        <button type="submit" class="btn btn-outline-info float-right" id="assign"><i class="bi bi-download mr-1"></i>Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    var empresadGS = $('#empresa_id').bootstrapDualListbox({
+        nonSelectedListLabel: 'Clientes seleccionados  ',
+        selectedListLabel: 'Clientes no seleccionados',
+        preserveSelectionOnMove: 'moved',
+        moveOnSelect: true
+    });
+
+    
+    $("#assign").on("click", function () {
+       var selectedValues = $("#empresa_id").val();     
+        $.ajax({
+            url: '@Url.Action("AssignCinemas","Users")',
+            type: "POST",
+            data: {Ids: selectedValues, UserId:'@ViewBag.UserId'},
+            success: function (result) {
+                // Manejar la respuesta de la petición AJAX
+                if (result.error) {
+                    darMensajeModal("Error", result.mensaje, "error")
+                }
+                else {
+                    darMensajeModal("Exito", result.mensaje, "success", function () {
+                        $("#cancelar").click()
+                    })
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                // Manejar los errores de la petición AJAX
+                darMensajeModal("Error", errorThrown, "error")
+            }
+        });
+    })
+  
+
+</script>

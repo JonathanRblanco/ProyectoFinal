@@ -1,8 +1,67 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@using ProyectoFinal.DTO.Requests;
+@using ProyectoFinal.DTO.Responses;
+@model List<GetMoviesResponse>
+<style>
+    .poster-container {
+        width: 230px;
+        position: absolute;
+        top: 0;
+        left: 20px;
+        z-index: 9999;
+    }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    .poster {
+        width: 100%;
+        box-shadow: 0 5px 20px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    .col:hover {
+        transform: scale(1.05);
+        transition: transform 0.2s ease-in-out;
+    }
+</style>
+<div class="album py-5 bg-body-tertiary fade-in">
+    <div class="container">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            @foreach (var item in Model)
+            {
+                <div class="col">
+                    <div class="card shadow-sm">
+                        <img src="@Url.Action("GetImage","Image",new GetImageRequest{Id=item.ImageId})" class="poster _movie" style="width: 100%;height: 500px;" data-id="@item.Id" />
+                        <div class="card-body">
+                            <p class="card-text">@item.Name.ToUpper()</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-body-secondary">@item.Duration mins</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
 </div>
+<script>
+    $(document).ready(function () {
+        $("._movie").on("click", function () {
+            let request = {}
+            request.Id = $(this).data('id')
+            $.ajax({
+                url: '@Url.Action("Details","Movies")',
+                type: 'Get',
+                data: request,
+                success: function (data) {
+                    if (data.error) {
+                        mensaje(data.mensaje, 'error')
+                    }
+                    else {
+                        $('#myModal .modal-body').html(data);
+                        $('#myModal').modal('show');
+                    }
+                }, error: function (jqXHR, textStatus, errorThrown) {
+                    mensaje("Algo salio mal, intenta nuevamente, error: " + errorThrown, "error")
+                }
+            });
+        })
+    })
+</script>
+

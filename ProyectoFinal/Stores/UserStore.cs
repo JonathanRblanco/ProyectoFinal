@@ -1,12 +1,12 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Identity;
-using ProyectoFinal.Contracts;
-using ProyectoFinal.Models;
+using ProyectoFinal.Data;
+using ProyectoFinal.ServicesContracts;
 
 namespace ProyectoFinal.Stores
 {
     //TODO : IMPLEMENTAR LOS METODOS DEL STORE USANDO LOS REPOSITORIOS DE IUNITOFWORK
-    public class UserStore : IUserStore<User>, IUserPasswordStore<User>, IUserEmailStore<User>, IUserRoleStore<User>, IUserLockoutStore<User>
+    public class UserStore : IUserStore<User>, IUserPasswordStore<User>, IUserEmailStore<User>, IUserRoleStore<User>, IUserLockoutStore<User>, IUserPhoneNumberStore<User>, IUserLoginStore<User>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -20,14 +20,15 @@ namespace ProyectoFinal.Stores
             try
             {
                 // Obtener el ID del rol utilizando Dapper y la instancia de IUnitOfWork
-                var roleId = await _unitOfWork.RolesRepository.GetRoleByRoleName(roleName, _unitOfWork.Transaction);
+                var role = await _unitOfWork.RolesRepository.GetRoleByName(roleName, _unitOfWork.Transaction);
 
-                if (roleId is null)
+                if (role is null)
                 {
                     throw new ArgumentException($"El rol '{roleName}' no existe.");
                 }
                 // Asociar el usuario con el rol en la tabla UserRoles utilizando Dapper y la instancia de IUnitOfWork
-                await _unitOfWork.UserRolesRepository.InsertUsuRol(roleId, user.Id, _unitOfWork.Transaction);
+                var usuRol = new UserRoles() { RoleId = role.Id, UserId = user.Id };
+                await _unitOfWork.UserRolesRepository.InsertUsuRol(usuRol, _unitOfWork.Transaction);
                 // Completar la transacción
             }
             catch (Exception ex)
@@ -42,19 +43,16 @@ namespace ProyectoFinal.Stores
             try
             {
                 // Agregar el usuario a la base de datos utilizando Dapper y la instancia de IUnitOfWork
-                _unitOfWork.BeginTransaction();
                 user.ConcurrencyStamp = Guid.NewGuid().ToString();
                 user.SecurityStamp = Guid.NewGuid().ToString();
-                await _unitOfWork.UsuarioRepository.CreateUser(user, _unitOfWork.Transaction);
+                await _unitOfWork.UsersRepository.CreateUser(user, _unitOfWork.Transaction);
                 await AddToRoleAsync(user, "Usu", default);
                 // Completar la transacción
-                _unitOfWork.CommitTransaction();
                 return IdentityResult.Success;
             }
             catch (Exception ex)
             {
                 // Manejar cualquier excepción que pueda ocurrir al agregar el usuario a la base de datos
-                _unitOfWork.RollBack();
                 return IdentityResult.Failed(new IdentityError { Description = ex.Message });
             }
         }
@@ -64,34 +62,24 @@ namespace ProyectoFinal.Stores
             try
             {
                 // Eliminar el usuario de la base de datos utilizando Dapper y la instancia de IUnitOfWork
-                await _unitOfWork.Connection.ExecuteAsync(
-                    "DELETE FROM Users WHERE Id = @Id",
-                    new { user.Id },
-                    _unitOfWork.Transaction);
-
-                // Completar la transacción
-                _unitOfWork.CommitTransaction();
-
+                await _unitOfWork.UsersRepository.Delete(user.Id, _unitOfWork.Transaction);
                 return IdentityResult.Success;
             }
             catch (Exception ex)
             {
                 // Manejar cualquier excepción que pueda ocurrir al eliminar el usuario de la base de datos
-                _unitOfWork.RollBack();
                 return IdentityResult.Failed(new IdentityError { Description = ex.Message });
             }
         }
 
-        public async Task<User?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
+        public async Task<User> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
         {
             // Buscar al usuario por su email normalizado utilizando Dapper y la instancia de IUnitOfWork
-            return await _unitOfWork.Connection.QueryFirstOrDefaultAsync<User>(
-                "SELECT * FROM Users WHERE NormalizedEmail = @NormalizedEmail",
-                new { NormalizedEmail = normalizedEmail },
-                _unitOfWork.Transaction);
+            return await _unitOfWork.UsersRepository.FindByEmail(normalizedEmail, _unitOfWork.Transaction);
+
         }
 
-        public async Task<User?> FindByIdAsync(string userId, CancellationToken cancellationToken)
+        public async Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
             // Obtener el usuario de la base de datos utilizando Dapper y la instancia de IUnitOfWork
             var result = await _unitOfWork.Connection.QuerySingleOrDefaultAsync<User>(
@@ -102,7 +90,7 @@ namespace ProyectoFinal.Stores
             return result;
         }
 
-        public async Task<User?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
+        public async Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
             // Obtener el usuario de la base de datos utilizando Dapper y la instancia de IUnitOfWork
             var result = await _unitOfWork.Connection.QuerySingleOrDefaultAsync<User>(
@@ -113,7 +101,7 @@ namespace ProyectoFinal.Stores
             return result;
         }
 
-        public async Task<string?> GetEmailAsync(User user, CancellationToken cancellationToken)
+        public async Task<string> GetEmailAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el email del usuario
             return await Task.FromResult(user.Email);
@@ -125,18 +113,18 @@ namespace ProyectoFinal.Stores
             return await Task.FromResult(user.EmailConfirmed);
         }
 
-        public async Task<string?> GetNormalizedEmailAsync(User user, CancellationToken cancellationToken)
+        public async Task<string> GetNormalizedEmailAsync(User user, CancellationToken cancellationToken)
         {
             return await Task.FromResult(user.NormalizedEmail);
         }
 
-        public async Task<string?> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
+        public async Task<string> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el nombre de usuario normalizado
             return await Task.FromResult(user.UserName?.ToUpper());
         }
 
-        public async Task<string?> GetPasswordHashAsync(User user, CancellationToken cancellationToken)
+        public async Task<string> GetPasswordHashAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el passwordHash del usuario
             return await Task.FromResult(user.PasswordHash);
@@ -159,7 +147,7 @@ namespace ProyectoFinal.Stores
             return await Task.FromResult(user.Id);
         }
 
-        public async Task<string?> GetUserNameAsync(User user, CancellationToken cancellationToken)
+        public async Task<string> GetUserNameAsync(User user, CancellationToken cancellationToken)
         {
             // Devolver el nombre de usuario
             return await Task.FromResult(user.UserName);
@@ -197,12 +185,12 @@ namespace ProyectoFinal.Stores
             try
             {
                 // Obtener el ID del rol utilizando Dapper y la instancia de IUnitOfWork
-                var roleId = await _unitOfWork.Connection.ExecuteScalarAsync<int>(
+                var roleId = await _unitOfWork.Connection.ExecuteScalarAsync<string>(
                     "SELECT Id FROM Roles WHERE UPPER(NormalizedName) = UPPER(@NormalizedName)",
                     new { NormalizedName = roleName },
                     _unitOfWork.Transaction);
 
-                if (roleId == default)
+                if (string.IsNullOrEmpty(roleId))
                 {
                     // Si el rol no existe, lanzar una excepción
                     throw new ArgumentException($"El rol '{roleName}' no existe.");
@@ -215,12 +203,10 @@ namespace ProyectoFinal.Stores
                     _unitOfWork.Transaction);
 
                 // Completar la transacción
-                _unitOfWork.CommitTransaction();
             }
             catch (Exception ex)
             {
                 // Manejar cualquier excepción que pueda ocurrir al remover la asociación del usuario con el rol
-                _unitOfWork.RollBack();
                 throw new Exception($"Error al remover el usuario del rol '{roleName}': {ex.Message}", ex);
             }
         }
@@ -273,35 +259,24 @@ namespace ProyectoFinal.Stores
             {
                 // Actualizar el usuario en la base de datos utilizando Dapper y la instancia de IUnitOfWork
                 await _unitOfWork.Connection.ExecuteAsync(
-                    "UPDATE Users SET UserName = @UserName, Email = @Email, PasswordHash = @PasswordHash " +
+                    "UPDATE Users SET UserName = @UserName, Email = @Email, PasswordHash = @PasswordHash, PhoneNumber = @PhoneNumber, LockoutEnabled=@LockoutEnabled, LockoutEnd=@LockoutEnd, NormalizedUserName=@NormalizedUserName, NormalizedEmail=@NormalizedEmail,EmailConfirmed=@EmailConfirmed " +
                     "WHERE Id = @Id",
-                    new
-                    {
-                        user.Id,
-                        user.UserName,
-                        user.Email,
-                        user.PasswordHash
-                    },
+                    user,
                     _unitOfWork.Transaction);
-
                 // Actualizar la instancia de ApplicationUser con los datos que se actualizaron en la base de datos
                 user.ConcurrencyStamp = Guid.NewGuid().ToString();
-
                 // Completar la transacción
-                _unitOfWork.CommitTransaction();
-
                 return IdentityResult.Success;
             }
             catch (Exception ex)
             {
                 // Manejar cualquier excepción que pueda ocurrir al actualizar el usuario en la base de datos
-                _unitOfWork.RollBack();
                 return IdentityResult.Failed(new IdentityError { Description = ex.Message });
             }
         }
         public void Dispose()
         {
-            _unitOfWork.Dispose();
+            //_unitOfWork.Dispose();
         }
 
         public async Task<int> GetAccessFailedCountAsync(User user, CancellationToken cancellationToken)
@@ -357,6 +332,49 @@ namespace ProyectoFinal.Stores
 
             await _unitOfWork.Connection.ExecuteAsync(sql, new { user.LockoutEnabled, user.Id });
 
+        }
+
+        public async Task SetPhoneNumberAsync(User user, string? phoneNumber, CancellationToken cancellationToken)
+        {
+            user.PhoneNumber = phoneNumber;
+            await Task.FromResult(user.PhoneNumber);
+        }
+
+        public Task<string> GetPhoneNumberAsync(User user, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(user.PhoneNumber);
+        }
+
+        public async Task<bool> GetPhoneNumberConfirmedAsync(User user, CancellationToken cancellationToken)
+        {
+            return await Task.FromResult(user.PhoneNumberConfirmed);
+        }
+
+        public async Task SetPhoneNumberConfirmedAsync(User user, bool confirmed, CancellationToken cancellationToken)
+        {
+            user.PhoneNumberConfirmed = confirmed;
+            await Task.FromResult(user.PhoneNumberConfirmed);
+        }
+
+        public async Task AddLoginAsync(User user, UserLoginInfo login, CancellationToken cancellationToken)
+        {
+            await _unitOfWork.UsersLoginsRepository.AddLogin(user.Id, login.LoginProvider, login.ProviderKey, login.ProviderDisplayName, _unitOfWork.Transaction);
+        }
+
+        public async Task RemoveLoginAsync(User user, string loginProvider, string providerKey, CancellationToken cancellationToken)
+        {
+            await _unitOfWork.UsersLoginsRepository.RemoveLogin(user.Id, loginProvider, _unitOfWork.Transaction);
+        }
+
+        public async Task<IList<UserLoginInfo>> GetLoginsAsync(User user, CancellationToken cancellationToken)
+        {
+            var result = await _unitOfWork.UsersLoginsRepository.GetLoginsByUserId(user.Id, _unitOfWork.Transaction);
+            return result.Select(l => new UserLoginInfo(l.LoginProvider, l.ProviderKey, l.ProviderDisplayName)).ToList();
+        }
+
+        public async Task<User> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken)
+        {
+            return await _unitOfWork.UsersRepository.GetUserByLogin(loginProvider, providerKey, _unitOfWork.Transaction);
         }
     }
 }

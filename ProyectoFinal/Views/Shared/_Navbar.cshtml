@@ -1,0 +1,43 @@
+﻿  <!-- Navbar -->
+<nav class="main-header navbar navbar-expand navbar-dark navbar-light">
+    <!-- Left navbar links -->
+    @if (User.IsInRole("Usu"))
+    {
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+    }
+    <a class="nav-link main-content" asp-controller="Home" asp-action="Index"><i class="bi bi-house"></i></a>
+    <!-- SEARCH FORM -->
+    <form action="@Url.Action("Index","Home")" style="width:81%;margin-left:1%">
+        <div class="input-group">
+            <input type="search" class="form-control form-control-lg" placeholder="Busca la pelicula que desees" name="Name" value="@ViewBag.busqueda">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-lg btn-default">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+    </ul>
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="fs-2 mr-3 ml-2">
+            <a asp-action="Logout" asp-controller="Account">
+                <i class="bi bi-box-arrow-left"></i> Cerrar Sesión
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="fs-2 mr-3 ml-2">
+            <a asp-action="Login" asp-controller="Account">
+                <i class="bi bi-box-arrow-left"></i> Iniciar Sesión
+            </a>
+        </div>
+    }
+    <a class="nav-link" id="modo">
+        <i class="bi bi-moon-stars-fill"></i>
+    </a>
+</nav>
+<!-- /.navbar -->

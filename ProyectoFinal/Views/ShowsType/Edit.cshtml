@@ -1,0 +1,85 @@
+﻿@using ProyectoFinal.DTO.Responses;
+@model GetShowsTypeByIdResponse
+<div style="max-width: 1200px;">
+    <!-- Contenido del modal aquí -->
+    <form id="edit-tipo">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">Editar Tipo de Funcion</h3>
+            </div>
+            <div class="card-body">
+                <input hidden readonly name="Id" value="@Model.Id" />
+                <div class="form-group">
+                    <label>Nombre del Tipo de Funcion</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">@@</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Nombre del genero" value="@Model.Description" name="Description">
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="cancelar"> <i class="bi bi-arrow-return-left mr-1"></i>Cancelar</button>
+                <button type="submit" class="btn btn-outline-info float-right"> <i class="bi bi-download mr-1"></i>Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function () {
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: '@Url.Action("Edit","ShowsType")',
+                        type: "POST",
+                        data: formData,
+                        success: function (result) {
+                            // Manejar la respuesta de la petición AJAX
+                            if (result.error) {
+                                darMensajeModal("Error", result.mensaje, "error")
+                            }
+                            else {
+                                darMensajeModal("Exito", result.mensaje, "success", function () {
+                                    $("#cancelar").click()
+                                    $('#tipos-funcines').DataTable().destroy();
+                                    cargarTabla()
+                                })
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // Manejar los errores de la petición AJAX
+                            darMensajeModal("Error", errorThrown, "error")
+                        }
+                    });
+                }
+            });
+
+            $('#edit-tipo').validate({
+                rules: {
+                    Description: {
+                        required: true
+                    }
+                },
+                messages: {
+                    Description: 'El nombre del tipo de funcion es requerido'
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    })
+</script>
+

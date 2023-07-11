@@ -3,26 +3,72 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="~/Imagenes/ticket.svg" sizes="any" />
     <title>@ViewBag.Title</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/ProyectoFinal.styles.css" asp-append-version="true" />
+    @*<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />*@
+    <!-- Font Awesome Icons -->
+    <!-- Theme style -->
+    <link href="~/css/login.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="~/adminlte/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.4/font/bootstrap-icons.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="~/adminlte/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.css">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <link href="~/adminlte/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script src="~/adminlte/plugins/jquery/jquery.min.js"></script>
+    <script src="~/adminlte/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="~/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="~/adminlte/dist/js/adminlte.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <link href="~/adminlte/plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.css">
+    <script src="~/adminlte/plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.js"></script>
+    <style>
+        #content {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+            #content.show {
+                opacity: 1;
+            }
+    </style>
 </head>
 <body>
-    <section class=" gradient-custom">
+    <section class="gradient-custom">
         <div class="container py-5 h-100">
             <div class="row d-flex justify-content-center align-items-center h-100">
                 <div class="col-12 col-md-8 col-lg-6 col-xl-5">
-                    <div class="card bg-dark text-white" style="border-radius: 1rem;">
+                    <div id="content" class="card bg-dark text-white" style="border-radius: 1rem;">
                         @RenderBody()
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        $(document).ready(function () {
+            $('#content').addClass('show');
+        });
+        function darMensajeModal(titulo, mensaje, icon, callback = function () { }) {
+            Swal.fire({
+                icon: icon,
+                title: titulo,
+                text: mensaje,
+                allowOutsideClick: false
+            }
+            ).then((result) => {
+                if (result.isConfirmed && typeof callback === 'function') {
+                    callback();
+                }
+            })
+        };
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

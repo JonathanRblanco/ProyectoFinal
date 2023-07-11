@@ -1,0 +1,135 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@using ProyectoFinal.Data;
+@inject UserManager<User> userManager
+@{
+    var userId = userManager.GetUserId(User);
+}
+<style>
+    .shows-btn:hover {
+        transform: scale(1.05);
+        transition: transform 0.2s ease-in-out;
+    }
+</style>
+<div class="fade-in">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Mis Compras</h1>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="callout callout-info">
+                        <h5><i class="fas fa-info"></i> Nota:</h5>
+                        Aqui podras ver tus compras efectuadas en la web
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;justify-content: center; align-items: center;" id="chows">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    $(document).ready(function () {
+        $.get("@Url.Action("GetPayments","Account")?UserId=" + '@userId', function (data) {
+            $.each(data, function (index, value) {
+                var card = '<div class="card m-2 shows-btn" style="width: 20%;">' +
+                    '<ul class="list-group list-group-flush">' +
+                    '<li class="list-group-item"><b>Pelicula</b>: ' + value.show.movie.name + '</li>' +
+                    '<li class="list-group-item"><b>Tipo de función</b>: ' + value.show.showType.description + '</li>' +
+                    '<li class="list-group-item"><b>Sucursal</b>: ' + value.show.room.cinemaBranch.name + '</li>' +
+                    '<li class="list-group-item"><b>Dirección</b>: ' + value.show.room.cinemaBranch.address + ', ' + value.show.room.cinemaBranch.location + ', ' + value.show.room.cinemaBranch.cp + '</li>' +
+                    '<li class="list-group-item"><b>Dia</b>: ' + moment(value.show.date).format("DD-MM-YYYY").replace(".", "") + '</li>' +
+                    '<li class="list-group-item"><b>Hora</b>: ' + moment(value.show.date).format("HH:mm").replace(".", "") + '</li>' +
+                    '<li class="list-group-item"><b>Sala</b>: ' + value.show.room.number + '</li>' +
+                    '<li class="list-group-item"><b>Cantidad de entradas</b>: ' + value.amountOfTickets + '</li>' +
+                    '<li class="list-group-item"><b>Total</b>: $' + value.total + '</li>' +
+                    '<li class="list-group-item"><b>Codigo de la compra</b>: ' + value.code + '</li>' +
+                    '<li class="list-group-item" hidden>' + value.id + '</li>' +
+                    '<li class="list-group-item"><button type="button" class="btn btn-primary" id="btn-imprimir">Imprimir</button>  <button type="button" class="btn btn-success" id="btreenviar">Reenviar Correo</button></li>' +
+                    '</ul>' +
+                    '</div>';
+                $("#chows").append(card)
+            })
+
+            // Asignar evento al botón de imprimir
+            $("#btn-imprimir").on("click", function () {
+                var card = $(this).closest(".card");
+                var movie = card.find("li:nth-child(1)").text().replace("Pelicula: ", "");
+                var showType = card.find("li:nth-child(2)").text().replace("Tipo de función: ", "");
+                var branchName = card.find("li:nth-child(3)").text().replace("Sucursal:", "");
+                var address = card.find("li:nth-child(4)").text().replace("Dirección:", "");
+                var date = card.find("li:nth-child(5)").text().replace("Dia: ", "");
+                var time = card.find("li:nth-child(6)").text().replace("Hora: ", "");
+                var room = card.find("li:nth-child(7)").text().replace("Sala: ", "");
+                var amountOfTickets = card.find("li:nth-child(8)").text().replace("Cantidad de entradas: ", "");
+                var total = card.find("li:nth-child(9)").text().replace("Total: $", "");
+                var code = card.find("li:nth-child(10)").text().replace("Codigo de la compra: ", "");
+
+                let request = {
+                    Movie: movie,
+                    ShowType: showType,
+                    Date: date,
+                    Time: time,
+                    Room: room,
+                    AmountOfTickets: amountOfTickets,
+                    Total: total,
+                    Code: code,
+                    Address: address,
+                    BranchName: branchName
+                };
+                // Enviar los datos al controlador para generar el PDF
+                $.ajax({
+                    url: "@Url.Action("GeneratePdf", "Account")",
+                    method: 'Post',
+                    data: request,
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (response) {
+                        // Descargar el PDF
+                        var link = document.createElement("a");
+                        link.href = URL.createObjectURL(response);
+                        link.download = "Entrada.pdf";
+                        link.click();
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            });
+            $("#btreenviar").on("click", function () {
+                var card = $(this).closest(".card");
+                var receiptId = card.find("li:nth-child(10)").text();
+                let request = {
+                    receiptId: receiptId
+                }
+                $.ajax({
+                    url: '@Url.Action("ReSendReceiptEmail","Account")',
+                    type: "POST",
+                    data: request,
+                    success: function (result) {
+                        // Manejar la respuesta de la petición AJAX
+                        if (result.error) {
+                            darMensajeModal("Error", result.mensaje, "error")
+                        }
+                        else {
+                            darMensajeModal("Exito", result.mensaje, "success")
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        // Manejar los errores de la petición AJAX
+                        darMensajeModal("Error", errorThrown, "error")
+                    }
+                });
+            })
+        });
+    });
+
+</script>

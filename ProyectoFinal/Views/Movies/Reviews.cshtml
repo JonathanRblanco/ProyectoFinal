@@ -1,0 +1,130 @@
+﻿@{
+    var movieId = ViewData["MovieId"];
+
+}
+
+
+<div class="comentarios-container">
+    <div class="invoice p-3 mb-3">
+        <h3>Comentarios sobre la película</h3>
+        @if (User.IsInRole("Usu"))
+        {
+            <form id="ReviewMovie">
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="bi bi-chat"></i></span>
+                            </div>
+                            <textarea type="text" class="form-control" placeholder="Déjenos su comentario acerca de la película" name="Description"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary" style="margin-right: 5px" id="comment"><i class="bi bi-chat"></i> Comentar</button>
+                    </div>
+                </div>
+            </form>
+        }
+        <div class="row">
+            <div class="col-12">
+                <ul id="comentarios" class="list-group">
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        cargarComentarios();
+    });
+
+    $(document).ready(function () {
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: '@Url.Action("Create","Reviews")?MovieId=' + '@movieId',
+                        type: "POST",
+                        data: formData,
+                        success: function (result) {
+                            // Manejar la respuesta de la petición AJAX
+                            if (result.error) {
+                                darMensajeModal("Error", result.mensaje, "error");
+                            }
+                            else {
+                                darMensajeModal("Éxito", result.mensaje, "success", function () {
+                                    $("#cancelar").click();
+                                    document.getElementById("ReviewMovie").reset();
+                                    cargarComentarios();
+                                });
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // Manejar los errores de la petición AJAX
+                            console.log(jqXHR);
+                            darMensajeModal("Error", errorThrown, "error");
+                        }
+                    });
+                }
+            });
+
+            $('#ReviewMovie').validate({
+                rules: {
+                    Description: {
+                        required: true
+                    }
+                },
+                messages: {
+                    Description: 'El comentario es requerido'
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    });
+
+    function cargarComentarios() {
+        $.ajax({
+            url: '@Url.Action("GetReviews","Reviews")?MovieId=' + '@movieId',
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                // Ordenar los comentarios desde el más reciente hasta el más antiguo
+                data.sort(function (a, b) {
+                    return new Date(b.date) - new Date(a.date);
+                });
+                // Limpiar la lista de comentarios
+                $('#comentarios').empty();
+
+                // Agregar los comentarios a la lista en orden
+                data.forEach(function (comentario) {
+                    var usuario = comentario.userName;
+                    var textoComentario = comentario.description;
+                    var fecha = new Date (comentario.date);
+                    var fechaMes = fecha.getMonth() + 1;
+
+                    var listItem = $('<li class="list-group-item"></li>');
+                    listItem.append('<span class="usuario"><strong>' + usuario + '</strong></span>');
+                    listItem.append('<p class="comentario">' + textoComentario + '</p>');
+                    listItem.append('<span class="fecha">' + fecha.getDate() + '/' + fechaMes + '/' + fecha.getFullYear() + ' - ' + fecha.getHours() + ':' + fecha.getMinutes().toString().padStart(2, '0') + '</span>');
+
+                    $('#comentarios').prepend(listItem);
+                });
+            },
+            error: function (xhr, status, error) {
+                // Manejar errores de petición
+                mensaje('Algo salió mal, intenta nuevamente', 'error');
+            }
+        });
+    }
+</script>

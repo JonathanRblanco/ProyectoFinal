@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace ManejoPresupuestos.Servicios
+namespace ProyectoFinal.Utilities
 {
     public class MensajesDeErrorIdentity : IdentityErrorDescriber
     {

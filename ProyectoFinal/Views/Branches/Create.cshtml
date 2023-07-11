@@ -1,0 +1,193 @@
+﻿<div style="max-width: 1200px;">
+	<!-- Contenido del modal aquí -->
+	<form id="quickForm">
+		<div class="card card-info">
+			<div class="card-header">
+				<h3 class="card-title">Crear Sucursal</h3>
+			</div>
+			<div class="card-body">
+				<div class="form-group">
+					<label>Nombre de Sucursal</label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="bi bi-building-add"></i></span>
+						</div>
+						<input type="text" class="form-control" placeholder="Nombre de Sucursal" name="Name">
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Cine al que pertenece</label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="bi bi-building-add"></i></span>
+						</div>
+						<select name="CineId" class="form-control" id="cines"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Dirreción</label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+						</div>
+						<input type="text" class="form-control" placeholder="Direccion" name="Address">
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Localidad</label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="bi bi-map"></i></span>
+						</div>
+						<input type="text" class="form-control" placeholder="Localidad" name="Location">
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Provincia</label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="bi bi-compass"></i></span>
+						</div>
+						<input type="text" class="form-control" placeholder="Provincia" name="Province">
+					</div>
+				</div>
+				<div class="form-group">
+					<label>CP</label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="bi bi-geo"></i></span>
+						</div>
+						<input type="number" class="form-control" placeholder="CP" name="CP">
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label>Email</label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="bi bi-envelope-at"></i></span>
+						</div>
+						<input type="email" class="form-control" placeholder="Email" name="Email">
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Numero de Telefono </label>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<span class="input-group-text"><i class="fas fa-phone"></i></span>
+						</div>
+						<input type="text" class="form-control" placeholder="Numero de Telefono" name="Phone">
+					</div>
+				</div>
+
+				<div class="card-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal" id="cancelar"> <i class="bi bi-arrow-return-left mr-1"></i>Cancelar</button>
+					<button type="submit" class="btn btn-outline-info float-right"> <i class="bi bi-download mr-1"></i>Crear</button>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<script>
+	$(document).ready(function () {
+		$.get("@Url.Action("GetCinemas","Cinemas")?ByUser=true", function (data) {
+			var options = "";
+			$.each(data, function (index, value) {
+				options += '<option value="">Seleccione</option>';
+				options += '<option value="' + value.id + '">' + value.name + '</option>';
+			});
+			$('#cines').html(options);
+		});
+		$(function () {
+			$.validator.setDefaults({
+				submitHandler: function (form) {
+					var formData = $(form).serialize();
+					$.ajax({
+						url: '@Url.Action("Create","Branches")',
+						type: "POST",
+						data: formData,
+						success: function (result) {
+							// Manejar la respuesta de la petición AJAX
+							if (result.error) {
+								darMensajeModal("Error", result.mensaje, "error")
+							}
+							else {
+								darMensajeModal("Exito", result.mensaje, "success", function () {
+									$("#cancelar").click()
+									$('#sucursales').DataTable().destroy();
+									cargarTabla()
+								})
+							}
+						},
+						error: function (jqXHR, textStatus, errorThrown) {
+							// Manejar los errores de la petición AJAX
+							console.log(jqXHR)
+							darMensajeModal("Error", errorThrown, "error")
+						}
+					});
+				}
+			});
+
+			$('#quickForm').validate({
+				rules: {
+					Name: {
+						required: true
+					},
+					Address: {
+						required: true
+					},
+					Location:{
+						required: true
+					},
+					Province: {
+						required: true
+					},
+					CP: {
+						required: true
+					},
+					Email: {
+						required: true
+					},
+					Phone: {
+						required: true
+					}
+				},
+				messages: {
+					Name: {
+						required: 'El nombre de la sucursal es requerido'
+					}, 
+					Address: {
+						required: 'La direccion es requerida'
+					},
+					Location: {
+						required: 'La localidad es requerida'
+					},
+					Province: {
+						required: 'La provincia es requerida'
+					},
+					CP: {
+						required: 'El codigo postal es requerido'
+					},
+					Email: {
+						required: 'El email es requerido'
+					},
+					Phone: {
+						required: 'El telefono es requerido'
+					}
+				},
+				errorElement: 'span',
+				errorPlacement: function (error, element) {
+					console.log("errorPlacement", error, element);
+					error.addClass('invalid-feedback');
+					element.closest('.form-group').append(error);
+				},
+				highlight: function (element, errorClass, validClass) {
+					$(element).addClass('is-invalid');
+				},
+				unhighlight: function (element, errorClass, validClass) {
+					$(element).removeClass('is-invalid');
+				}
+			});
+		});
+	})
+</script>

@@ -1,17 +1,20 @@
-using ManejoPresupuestos.Servicios;
+using CineNet.Infraestructure.Repositorys;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 using NLog;
 using NLog.Web;
-using ProyectoFinal.Contracts;
+using ProyectoFinal.Data;
+using ProyectoFinal.DTO.AutoMapper;
+using ProyectoFinal.Handlers.UserHanlders;
 using ProyectoFinal.Loggin;
-using ProyectoFinal.Models;
-using ProyectoFinal.Repositorys;
+using ProyectoFinal.Services;
+using ProyectoFinal.ServicesContracts;
 using ProyectoFinal.Stores;
-using ProyectoFinal.UnitOfWork;
+using ProyectoFinal.Utilities;
 using System.Data;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -43,11 +46,43 @@ try
      * y para facilitar el mantenimiento y la prueba de la aplicación mediante la "inyección" 
      * de dependencias desde el exterior.*/
     #region Servicios
+    services.AddHttpContextAccessor();
     services.AddScoped<IDbConnection>(x => new SqlConnection(builder.Configuration.GetConnectionString("AppContext")));
-    services.AddScoped<IUsuarioRepository, UsersRepository>();
+    services.AddScoped<IUsersRepository, UsersRepository>();
     services.AddScoped<IRolesRepository, RolesRepository>();
     services.AddScoped<IUserRolesRepository, UserRolesRepository>();
+    services.AddScoped<IUserLoginsRepository, UsersLoginRepository>();
     services.AddScoped<IUnitOfWork, UnitOfWork>();
+    services.Configure<ApiOptions>(builder.Configuration.GetSection("ApiOptions"));
+    services.Configure<EmailOptions>(builder.Configuration.GetSection("EmailOptions"));
+    services.AddTransient(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<ApiOptions>>().Value;
+        var httpClient = new HttpClient { BaseAddress = new Uri(options.BaseAddress) };
+        // Aquí puedes configurar otras propiedades de HttpClient, si es necesario
+        return httpClient;
+    });
+    services.AddTransient<IEmailService, EmailService>();
+    services.AddScoped<IApiService, ApiService>();
+    services.AddScoped<IBranchService, BranchService>();
+    services.AddScoped<ICinemaService, CinemaService>();
+    services.AddScoped<IMovieService, MovieService>();
+    services.AddScoped<IImageService, ImageService>();
+    services.AddScoped<IRoomsService, RoomsService>();
+    services.AddScoped<IGendersService, GendersService>();
+    services.AddScoped<IClasificationsService, ClasificationsService>();
+    services.AddScoped<IShowsTypeService, ShowsTypeService>();
+    services.AddScoped<IShowsService, ShowsService>();
+    services.AddScoped<IReviewsService, ReviewsService>();
+    services.AddScoped<ICheckOutService, CheckOutService>();
+    services.AddScoped<IViewRenderService, ViewRenderService>();
+    services.AddScoped<IEmailTasksService, EmailTaskService>();
+    services.AddScoped<ITasksService, EmailReceiptTasksService>();
+    services.AddScoped<ITasksService, ConfirmEmailTaskService>();
+    services.AddScoped<ITasksService, ChangePasswordEmailTaskService>();
+    services.AddHostedService<EmailWorker>();
+    services.AddScoped<IQRService, QRService>();
+    services.AddScoped<IPdfService, PdfService>();
     #endregion
     /*El patrón Mediator es un patrón de diseño de software que se utiliza para
      * reducir la complejidad y mejorar la modularidad de las aplicaciones que 
@@ -60,7 +95,7 @@ try
      * correspondientes. Esto significa que cada objeto sólo tiene que conocer al Mediator 
      * y no tiene que preocuparse por conocer los detalles de los demás objetos con los que se comunica.*/
     #region MediatR
-    services.AddMediatR(config => config.RegisterServicesFromAssemblyContaining<Program>());
+    services.AddMediatR(config => config.RegisterServicesFromAssemblyContaining<SignInUserHandler>());
     #endregion
     /*AutoMapper es una biblioteca de mapeo de objetos en .NET que permite simplificar la conversión de objetos de un tipo a otro.
      * En lugar de escribir código personalizado para asignar cada propiedad de un objeto de origen a su correspondiente en un objeto
@@ -71,7 +106,7 @@ try
      * Es especialmente útil en aplicaciones que utilizan patrones de arquitectura de software como MVC o MVVM,
      * donde los objetos de la capa de modelo pueden requerir asignaciones frecuentes a objetos de la capa de presentación o viceversa.*/
     #region AutoMapper
-    builder.Services.AddAutoMapper(typeof(Program));
+    services.AddAutoMapper(configure => configure.AddProfile<MappingProfile>(), typeof(Program));
     #endregion
     /*NLog es una biblioteca de registro (logging) de código abierto para la plataforma .NET que permite a los desarrolladores registrar mensajes de registro en sus aplicaciones.
      * Con NLog, los desarrolladores pueden crear configuraciones de registro personalizadas para sus aplicaciones, 
@@ -96,10 +131,17 @@ try
      * de almacenamiento de datos que mejor se adapte a sus necesidades.*/
     #region Identity
     services.AddScoped<IUserStore<User>, UserStore>();
-    services.AddScoped<IRoleStore<IdentityRole>, RoleStore>();
-    services.AddIdentity<User, IdentityRole>()
+    services.AddScoped<IRoleStore<Rol>, RoleStore>();
+    services.AddIdentity<User, Rol>()
         .AddDefaultTokenProviders()
         .AddErrorDescriber<MensajesDeErrorIdentity>();
+    services.AddAuthentication().AddGoogle(googleOptions =>
+    {
+        googleOptions.ClientId = builder.Configuration.GetSection("GoogleAuthSettings")
+                            .GetValue<string>("ClientId");
+        googleOptions.ClientSecret = builder.Configuration.GetSection("GoogleAuthSettings")
+                            .GetValue<string>("ClientSecret");
+    });
 
     services.Configure<IdentityOptions>(options =>
     {
@@ -118,8 +160,9 @@ try
 
         // User settings
         options.User.AllowedUserNameCharacters =
-          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ áéíóúÁÉÍÓÚñÑ";
         options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedEmail = true;
     });
     services.ConfigureApplicationCookie(options =>
     {
@@ -131,6 +174,7 @@ try
         options.SlidingExpiration = true;
     });
     #endregion
+
     var app = builder.Build();
     // Configure the HTTP request pipeline.
     if (!app.Environment.IsDevelopment())
@@ -150,7 +194,7 @@ try
 
     app.MapControllerRoute(
         name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}");
+        pattern: "{controller=Home}/{action=Index}");
 
     app.Run();
 }

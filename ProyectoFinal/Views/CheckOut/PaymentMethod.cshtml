@@ -1,0 +1,235 @@
+﻿<style>
+    .mrow {
+        margin-top: 30px;
+        margin-bottom: 30px;
+    }
+
+    .main span:hover {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .mrow img:hover {
+        border-bottom: 1px solid #fff;
+        cursor: pointer;
+    }
+
+    .group {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .input-placeholder {
+        position: absolute;
+        top: 6px;
+        padding: 7px 0 0 10px;
+        transition: all 200ms;
+        opacity: 0.5;
+        color: #dae0e5 !important;
+        font-size: 75%;
+    }
+
+    .input:focus + .input-placeholder,
+    .input:valid + .input-placeholder {
+        font-size: 75%;
+        transform: translate3d(0,-100%,0);
+        opacity: 1;
+        top: 10px;
+    }
+
+    .input {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid #fff !important;
+        border-radius: 0;
+        outline: 0;
+    }
+
+        .input:focus,
+        .input:after {
+            outline-width: 0;
+            border-bottom: 1px solid #fff !important;
+            background: transparent;
+            box-shadow: none;
+            border-radius: 0;
+            color: #dae0e5;
+            letter-spacing: 1px;
+        }
+
+    .spinner-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        display: none;
+    }
+
+    .spinner {
+        color: white;
+        font-size: 24px;
+    }
+
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<div class="container-fluid w-100" id="checkout-block">
+    <div class="row justify-content-center">
+        <div class="card my-4 p-3" style="background: #000;color: #fff;">
+            <div class="row main">
+                <div class="col-12"><span>Datos de pago</span></div>
+            </div>
+
+            <div class="row justify-content-center mrow">
+                <div class="col-12">
+                    <span>Tarjetas aceptadas: </span>
+                    <img src="https://img.icons8.com/color/48/000000/mastercard-logo.png" width="35px" height="35px" />
+                    <img src="https://img.icons8.com/color/48/000000/visa.png" width="35px" height="35px" />
+                </div>
+            </div>
+            <form id="checkout-form">
+                <div class="form-card">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group group">
+                                <input type="text" class="form-control p-0 input" name="number" required maxlength="16"><label class="input-placeholder p-0" for="number">N° Tarjeta</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group group">
+                                <input type="text" class="form-control p-0 input" name="name" required><label class="input-placeholder p-0" for="name">Titular</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4 col-12">
+                            <div class="form-group group">
+                                <input type="text" class="form-control p-0 input" name="docn" required max="8"><label class="input-placeholder p-0" for="docn">N° Documento</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-4 col-12">
+                            <div class="form-group group">
+                                <input type="text" class="form-control p-0 input" name="expdate" required autocomplete="off" maxlength="5" placeholder="MM/YY"><label class="input-placeholder p-0" for="expdate">Fecha Expiracion</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-4 col-12">
+                            <div class="form-group group">
+                                <input type="password" class="form-control p-0 input" name="passw" required autocomplete="off" maxlength="3"><label class="input-placeholder p-0" for="passw">CVV</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row lrow mt-4 mb-3">
+                        <div class="col-sm-8 col-12"><h3>Total:</h3></div>
+                        <div class="col-sm-4 col-12"><h5>&#36;<span id="sp-total"></span></h5></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-12">
+                            <button class="btn btn-primary btn-block" style="border: none;border-radius: 30px;" id="end-checkout">
+                                Pagar
+                            </button>
+                            <div class="row main btn btn-block" style="color:white" data-dismiss="modal">
+                                <div class="col-12 ml-2"><span>Cancelar</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="spinner-overlay" id="spinner">
+    <span class="spinner">Procesando compra...</span>
+    <i class="fas fa-spinner fa-spin spinner"></i>
+</div>
+<script>
+    $(document).ready(function () {
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var spinner = document.getElementById("spinner");
+                    spinner.style.display = "flex";
+                    $("#end-checkout").prop('disabled', true)
+                    cineId = $("#entradas-select").val()
+                    showId = $("#show-id").val()
+                    totalTickets = $("#entradas-select").val()
+                    total = $("#total-price").val()
+                    var request = {
+                        CineId: cineId,
+                        ShowId: showId,
+                        AmountOfTickets: totalTickets,
+                        Total: total
+                    }
+                    setTimeout(function () {
+                        $.ajax({
+                            url: '@Url.Action("Payment","CheckOut")',
+                            type: "POST",
+                            data: request,
+                            success: function (result) {
+                                // Manejar la respuesta de la petición AJAX
+                                if (result.error) {
+                                    darMensajeModal("Error", result.mensaje, "error")
+                                    $("#end-checkout").prop('disabled', false)
+                                }
+                                else {
+                                    darMensajeModal("Exito", result.mensaje, "success", function () {
+                                        window.location.href = '@Url.Action("MyPayments","Account")'
+                                    })
+                                }
+                            },
+                            error: function (jqXHR, textStatus, errorThrown) {
+                                // Manejar los errores de la petición AJAX
+                                $("#end-checkout").prop('disabled', false)
+                                darMensajeModal("Error", errorThrown, "error")
+                            }
+                        });
+                    }, 3000);
+                }
+            });
+            $('#checkout-form').validate({
+                rules: {
+                    number: {
+                        required: true
+                    },
+                    name: {
+                        required: true
+                    },
+                    passw: {
+                        required: true
+                    },
+                    docn: {
+                        required: true
+                    },
+                    expdate:{
+                        required: true
+                    }
+                },
+                messages: {
+                    number: 'El numero de tarjeta es requerido',
+                    name: 'El nombre del titular es requerido',
+                    passw: 'El codigo de seguridad es requerido',
+                    docn: 'El numero de documento es requerido',
+                    expdate: 'La fecha de expiracion es requerida',
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+        $("#sp-total").text($("#total-price").val())
+    })
+</script>

@@ -1,0 +1,237 @@
+﻿@using ProyectoFinal.DTO.Responses;
+@model GetShowByIdResponse
+<div style="max-width: 1200px;">
+    <!-- Contenido del modal aquí -->
+    <form id="form-edit-show">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">Editar Funcion</h3>
+            </div>
+            <div class="card-body">
+                <input asp-for="@Model.Id" hidden/>
+                <div class="form-group">
+                    <label>Fecha y hora de la funcion</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                        </div>
+                        <input type="datetime-local" value="@Model.Date.ToString("yyyy-MM-ddTHH:mm")" class="form-control" name="Date">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Pelicula</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-body-text"></i></span>
+                        </div>
+                        <select name="MovieId" class="form-control" id="peliculas"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Funcion</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-file-earmark-play"></i></span>
+                        </div>
+                        <select name="ShowTypeId" class="form-control" id="tipos-funcion"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Cine</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-clock"></i></span>
+                        </div>
+                        <select class="form-control" id="cines" name="Cines"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sucursal</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-file-earmark-play"></i></span>
+                        </div>
+                        <select class="form-control" id="sucursales" name="Sucursal"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sala</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-people-fill"></i></span>
+                        </div>
+                        <select name="RoomId" class="form-control" id="salas"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Precio</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-person-lines-fill"></i></span>
+                        </div>
+                        <input type="number" class="form-control" name="Price" value="@Model.Price">
+                    </div>
+                </div>
+                <input name="Capacity" hidden id="capacity" value="@Model.Capacity"/>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" id="cancelar"><i class="bi bi-arrow-return-left mr-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-outline-info float-right"><i class="bi bi-download mr-1"></i>Guardar</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function () {
+        var rooms = []
+        $.get("@Url.Action("Get","ShowsType")", function (data) {
+            let options = "";
+            options += '<option value="">Seleccione</option>';
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.ShowTypeId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"'+selected+'>' + value.description + '</option>';
+            });
+            $('#tipos-funcion').html(options);
+        });
+        $.get("@Url.Action("GetMovies","Movies")", function (data) {
+            let options = "";
+            options += '<option value="">Seleccione</option>';
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.MovieId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"'+selected+'>' + value.name + '</option>';
+            });
+            $('#peliculas').html(options);
+        });
+        $.get("@Url.Action("GetCinemas","Cinemas")?ByUser=true", function (data) {
+            let options = "";
+            options += '<option value="0">Seleccione</option>';
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.Room.CinemaBranch.CineId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"'+selected+'>' + value.name + '</option>';
+            });
+            $('#cines').html(options);
+        });
+        $.get("@Url.Action("GetCinemasBranches","Branches")?CinemaId=" + '@Model.Room.CinemaBranch.CineId', function (data) {
+            var options = "";
+            options += '<option value="0">Seleccione</option>';
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.Room.CinemaBranchId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"'+selected+'>' + value.name + '</option>';
+            });
+            $('#sucursales').html(options);
+        });
+        $("#cines").on("change", function () {
+            $.get("@Url.Action("GetCinemasBranches","Branches")?CinemaId=" + this.value, function (data) {
+                var options = "";
+                options += '<option value="0">Seleccione</option>';
+                $.each(data, function (index, value) {
+                    options += '<option value="' + value.id + '">' + value.name + '</option>';
+                });
+                $('#sucursales').html(options);
+                $('#salas').html('<option value="">Seleccione</option>');
+            });
+        })
+        $.get("@Url.Action("GetRooms","Rooms")?BranchId=" + '@Model.Room.CinemaBranchId', function (data) {
+            var options = "";
+            rooms = data
+            options += '<option value="">Seleccione</option>';
+            $.each(data, function (index, value) {
+                var selected = (value.id == '@Model.RoomId') ? 'selected' : '';
+                options += '<option value="' + value.id + '"'+selected+'>' + value.number + '</option>';
+            });
+            $('#salas').html(options);
+        });
+        $("#sucursales").on("change", function () {
+            $.get("@Url.Action("GetRooms","Rooms")?BranchId=" + this.value, function (data) {
+                var options = "";
+                rooms = data
+                options += '<option value="">Seleccione</option>';
+                $.each(data, function (index, value) {
+                    options += '<option value="' + value.id + '">' + value.number + '</option>';
+                });
+                $('#salas').html(options);
+            });
+        })
+        $("#salas").on("change", function () {
+            let room = rooms.find(r => r.id == this.value)
+            $("[name=Capacity]").val(room.capacity)
+        })
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var formData = new FormData(form);
+                    $.ajax({
+                        url: '@Url.Action("Edit","Shows")',
+                        type: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (result) {
+                            // Manejar la respuesta de la petición AJAX
+                            if (result.error) {
+                                darMensajeModal("Error", result.mensaje, "error")
+                            }
+                            else {
+                                darMensajeModal("Exito", result.mensaje, "success", function () {
+                                    $("#cancelar").click()
+                                    $('#shows').DataTable().destroy();
+                                    cargarTabla()
+                                })
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // Manejar los errores de la petición AJAX
+                            darMensajeModal("Error", errorThrown, "error")
+                        }
+                    });
+                }
+            });
+            $('#form-edit-show').validate({
+                rules: {
+                    Date: {
+                        required: true
+                    },
+                    Price: {
+                        required: true
+                    },
+                    Cines: {
+                        required: true
+                    },
+                    ShowTypeId: {
+                        required: true
+                    },
+                    MovieId: {
+                        required: true
+                    },
+                    Sucursal: {
+                        required: true
+                    },
+                    RoomId: {
+                        required: true
+                    }
+                },
+                messages: {
+                    Date: 'La fecha y horario de la funcion es requerido',
+                    Price: 'El precio es requerido',
+                    Cines: 'Debe seleccionar un cine',
+                    ShowTypeId: 'Debe seleccionar una opcion',
+                    MovieId: 'Debe seleccionar una pelicula',
+                    Sucursal: 'Debe seleccionar una sucursal',
+                    RoomId: 'Debe seleccionar una sala'
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    })
+</script>

@@ -1,0 +1,172 @@
+﻿@using ProyectoFinal.DTO.Requests;
+@using ProyectoFinal.DTO.Responses;
+@model SeeProfileResponse
+<div class="card card-info fade-in" style="margin-top:6%">
+    <div class="card-header">
+        <h3 class="card-title">Mi Perfil</h3>
+    </div>
+    <div class="text-center mt-2">
+        <img class="profile-user-img img-fluid img-circle" src="@Url.Action("GetImage", "Image", new GetImageRequest{ Id = Model.ImageId })" alt="User profile picture" id="profile-img">
+        <button type="button" class="btn btn-outline-success ml-2" id="cambiar-img"><i class="bi bi-pencil-square"></i> Cambiar Imagen</button>
+    </div>
+
+    <div class="card-body">
+        <form id="profileform">
+            <input value="@Model.Id" name="Id" hidden/>
+            <div class="card card-info">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Nombre de Usuario</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">@@</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Nombre de Usuario" name="UserName" value="@Model.UserName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            </div>
+                            <input type="email" class="form-control" placeholder="Email" name="Email" value="@Model.Email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Numero de Telefono</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Telefono" name="PhoneNumber" value="@Model.PhoneNumber">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-outline-info float-right"><i class="bi bi-download"></i>    Guardar cambios</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: '@Url.Action("EditProfile","Account")',
+                        type: "POST",
+                        data: formData,
+                        success: function (result) {
+                            // Manejar la respuesta de la petición AJAX
+                            if (result.error) {
+                                darMensajeModal("Error", result.mensaje, "error")
+                            }
+                            else {
+                                darMensajeModal("Exito", result.mensaje, "success", function () {
+
+                                    $("#see-profile").click()
+                                })
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // Manejar los errores de la petición AJAX
+                            darMensajeModal("Error", errorThrown, "error")
+                        }
+                    });
+                }
+            });
+            $.validator.addMethod("phonevalidation", function (value, element) {
+                return this.optional(element) || /^[0-9]+$/.test(value);
+            }, "Solo se permiten números");
+
+            $('#profileform').validate({
+                rules: {
+                    UserName: {
+                        required: true
+                    },
+                    Email: {
+                        required: true,
+                        email: true
+                    },
+                    PhoneNumber: {
+                        minlength: 10,
+                        maxlength: 10,
+                        phonevalidation: true
+                    }
+                },
+                messages: {
+                    UserName: 'El nombre de usuario es requerido',
+                    Email: {
+                        required: 'El email es requerido',
+                        email: 'Ingresa un email valido'
+                    },
+                    PhoneNumber: {
+                        minlength: "El número de teléfono debe tener 10 dígitos",
+                        maxlength: "El número de teléfono debe tener 10 dígitos",
+                        phonevalidation: "Solo se admiten números"
+                    }
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    console.log("errorPlacement", error, element);
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+        $("#cambiar-img").on("click", async function () {
+            const { value: file } = await Swal.fire({
+                title: 'Selecciona una imagen',
+                input: 'file',
+                inputAttributes: {
+                    'accept': 'image/*',
+                    'aria-label': 'Upload your profile picture'
+                }
+            })
+            if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+                formData.append("UserId",'@Model.Id')
+                $.ajax({
+                    url: "@Url.Action("ChangeImage","Account")",
+                    type: "POST",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (response) {
+                        // Si la solicitud se ha completado correctamente, procesa la respuesta
+                        var url = window.URL.createObjectURL(response);
+                        $('#profile-img').attr('src', url);
+                        $('#side-img-profile').attr('src', url);
+                        const reader = new FileReader()
+                        reader.onload = (e) => {
+                            Swal.fire({
+                                title: 'Cambiaste tu imagen de perfil',
+                                imageUrl: e.target.result,
+                                imageAlt: 'The uploaded picture'
+                            })
+                        }
+                        reader.readAsDataURL(file)
+                    },
+                    error: function (jqXHR, textStatus, errorMessage) {
+                        // Si ha habido un error, muestra un mensaje de error
+                        mensaje("No se puedo actualizar la imagen", "error")
+                    }
+                });
+            }
+        })
+    })
+</script>
